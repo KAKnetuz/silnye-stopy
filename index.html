@@ -138,6 +138,9 @@ h1,h2,h3{text-wrap:balance}
 .anim .twl{fill:none;stroke:var(--calm);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
 .anim .pap{fill:var(--paper);stroke:var(--line);stroke-width:1.5}
 .anim .wall{fill:var(--line)}
+.anim .cap{fill:var(--muted);font:600 8px var(--f-body);letter-spacing:.01em}
+.anim .capa{fill:var(--accent);font:700 8px var(--f-body);letter-spacing:.01em}
+.anim .gap{fill:var(--accent-soft)}
 
 .dial{position:relative;width:min(58vw,30vh,230px);max-width:100%;aspect-ratio:1;margin:2px auto 0}
 .dial svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
@@ -444,7 +447,7 @@ function walk(p,o){
     return fig({hip:[118,hy],tor:o.tor||2,far:[-2,-1],legs:legs,arms:o.arms(w)});
   },110);
   var d="";for(var k=0;k<14;k++){var x=((k*20-p*60)%280+280)%280-20;d+=ln([x,114],[x+8,114],"fl");}
-  return gl(110)+d+g.svg;
+  return o.bare?g.svg:gl(110)+d+g.svg;
 }
 function chair(x,y){
   return '<rect x="'+(x-16)+'" y="'+y+'" width="32" height="4" rx="2" class="prf"/>'+ln([x-13,y+4],[x-13,112],"pr")+ln([x+13,y+4],[x+13,112],"pr")+ln([x-15,y+2],[x-15,y-34],"pr");
@@ -488,7 +491,7 @@ function footSide(x,y,o){
         "Q"+f1(bx+5)+" "+f1(-7.5-2*cu)+" "+f1(bx)+" "+f1(-8-bl)+
         "Q"+f1(0.55*bx)+" "+f1(-15-3*s-2*arch)+" 11 -21"+
         "L1 -21C-3 -16 -5 -5 0 0Z";
-  var g='<g transform="translate('+f1(x)+" "+f1(y)+") rotate("+f1(o.rot||0)+") scale("+sc+')">';
+  var g='<g transform="translate('+f1(x)+" "+f1(y)+") rotate("+f1(o.rot||0)+" "+f1((o.px||0)*sc)+" 0) scale("+sc+')">';
   g+='<path d="'+d+'" class="ft"/>';
   g+='<path d="M'+f1(bx+0.5)+" "+f1(-bl-0.5)+"Q"+f1(bx+2)+" "+f1(-4-bl)+" "+f1(bx+0.5)+" "+f1(-7.5-bl)+'" class="ftd"/>';
   g+='<g transform="rotate('+f1(o.ka||0)+' 6 -21)"><rect x="1" y="'+(-SL)+'" width="10" height="'+(SL-17)+'" class="ftn"/><path d="M1 -18V'+(-SL)+"M11 -18V"+(-SL)+'" class="ft"/></g>';
@@ -534,23 +537,8 @@ A.noski={T:2.6,f:function(p){
 }};
 A.soldier={T:1.2,f:function(p){return walk(p,{kn:22,an:function(){return -58;},arms:function(){return [{sh:-25,el:64},{sh:-25,el:64}];}});}};
 A.penguin={T:1.3,f:function(p){return walk(p,{amp:12,kn:12,an:function(){return 30;},arms:function(){return [{sh:-30,el:-8},{sh:-30,el:-8}];}});}};
-A.bear={T:1.6,f:function(p){
-  var w=2*PI*p;
-  return gl(102)+legBack(102,-1,{tilt:13,lift:8*Math.max(0,Math.sin(w))})+legBack(138,1,{tilt:13,lift:8*Math.max(0,-Math.sin(w))});
-}};
-A.rollwalk={T:1.3,f:function(p){return walk(p,{an:function(th,c){var w=sm((0.3-c)/0.6);return w*th*1.1+(1-w)*6;},arms:function(w){return [{sh:-14*Math.sin(w),el:14},{sh:14*Math.sin(w),el:14}];}});}};
 
 /* ---- Блок 2: лёжа ---- */
-A.ladoshki={T:3,f:function(p){
-  var u=ease(p),s="",sc=1.5;
-  [[-1,90],[1,150]].forEach(function(d){
-    var sd=d[0],x=d[1],mir=sd>0,sx=1-0.55*u,sy=1-0.1*u,cx=x-sd*5*u;
-    s+=footTop(x,108,{sc:sc,mir:mir,cls:"gh"});
-    s+=footTop(cx+sd*11*u,108,{sc:sc,mir:mir,sx:sx*0.9,sy:sy,cls:"sd"});
-    s+=footTop(cx,108,{sc:sc,mir:mir,sx:sx,sy:sy});
-  });
-  return s+arcA(90,24,14,205,325)+arcA(150,24,14,335,215);
-}};
 A.claps={T:1.6,f:function(p){
   var u=sm(Math.min(1,ease(p)*1.3)),s=gl(106);
   [-1,1].forEach(function(sd){
@@ -561,12 +549,6 @@ A.claps={T:1.6,f:function(p){
   });
   if(u>0.9)s+=ln([120,62],[120,56],"ac")+ln([113,64],[109,59],"ac")+ln([127,64],[131,59],"ac");
   return s;
-}};
-A.wipers={T:2.4,f:function(p){
-  var a=12*ease(p);
-  return footTop(98,110,{sc:1.35,cls:"gh"})+footTop(142,110,{sc:1.35,mir:1,cls:"gh"})+
-         footTop(98,110,{sc:1.35,rot:a})+footTop(142,110,{sc:1.35,mir:1,rot:-a})+
-         ci([98,110],2.6,"acf")+ci([142,110],2.6,"acf")+arcA(98,110,76,253,268)+arcA(142,110,76,287,272);
 }};
 
 /* ---- Блок 2: сидя ---- */
@@ -634,19 +616,6 @@ A.artist={T:6,f:function(p){
 }};
 
 /* ---- Блок 2: стоя ---- */
-A.shortfoot={T:4,f:function(p){
-  var u=sm(Math.min(1,ease(p)*1.3)),o={sc:1.75,arch:u,s:0.35*u,shin:46},x=58;
-  var ax=x+0.45*(40-7*o.s-11)*o.sc;
-  return gl(106)+footSide(x,105,o)+'<g opacity="'+f1(u)+'">'+arrow([ax,104],[ax,104-10-11*u])+"</g>"+ln([x+footLen(o)-24,110],[x+footLen(o)+4,110],"dsh");
-}};
-A.raise={T:2.6,f:function(p){
-  var h=13*ease(p);
-  return gl(102)+legBack(103,-1,{lift:h,axis:1})+legBack(137,1,{lift:h,axis:1})+ci([120,82-h],10,"ball");
-}};
-A.rollouts={T:2.8,f:function(p){
-  var t=16*ease(p);
-  return gl(102)+legBack(100,-1,{tilt:t})+legBack(140,1,{tilt:t})+arcA(100,96,22,250,200)+arcA(140,96,22,290,340);
-}};
 A.tightrope={T:8,f:function(p){
   var q=p*8,k=Math.min(7,Math.floor(q)),sub=q-k,dir=k<4?-1:1,j=k<4?k:k-4;
   var c=k<4?152-14*j:96+14*j,lead=dir<0?0:1;
@@ -719,6 +688,89 @@ A.rags={T:4,f:function(p){
   if(shake)s+=ln([140,50],[146,48],"ac")+ln([140,58],[147,58],"ac")+ln([106,50],[100,48],"ac")+ln([106,58],[99,58],"ac");
   else s+='<circle cx="104" cy="96" r="'+f1(3+3*ease((p-0.55)/0.45*2%1))+'" class="dsa"/>';
   return s;
+}};
+
+/* ---- подписи, панели, стопы спереди ---- */
+function tx(x,y,t,c,anc){return '<text x="'+f1(x)+'" y="'+f1(y)+'" text-anchor="'+(anc||"middle")+'" class="'+(c||"cap")+'">'+t+"</text>";}
+function divider(){return ln([120,8],[120,112],"dsh");}
+function grp(x,y,sc,inner){return '<g transform="translate('+f1(x)+" "+f1(y)+") scale("+sc+')">'+inner+"</g>";}
+function legFront(cx,sd,o){
+  var h=o.lift||0,t=(o.tilt||0)*(sd<0?-1:1),px=cx+sd*12,m=sd<0?1:-1,s="";
+  var inner=rotP([cx-sd*12,102],[px,102],t),show=Math.abs(t)>1&&h<0.5;
+  if(show)s+='<path d="M'+f1(px)+" 102L"+f1(inner[0])+" "+f1(inner[1])+"L"+f1(inner[0])+' 102Z" class="gap"/>';
+  s+='<g transform="rotate('+f1(t)+" "+px+' 102) translate(0 '+f1(-h)+')">';
+  s+='<path d="M'+(cx-7)+" 0C"+(cx-9)+" 30 "+(cx-8)+" 60 "+(cx-6)+" 84L"+(cx+6)+" 84C"+(cx+8)+" 60 "+(cx+9)+" 30 "+(cx+7)+' 0" class="ft"/>';
+  s+='<path d="M'+(cx-12)+" 102C"+(cx-13)+" 94 "+(cx-9)+" 86 "+(cx-5)+" 84L"+(cx+5)+" 84C"+(cx+9)+" 86 "+(cx+13)+" 94 "+(cx+12)+' 102Z" class="ft"/>';
+  [[8.5,3],[3.6,2.2],[-0.4,2],[-4.2,1.8],[-7.8,1.6]].forEach(function(q){s+=ci([cx+m*q[0],100.5-q[1]*0.4],q[1],"ft");});
+  s+="</g>";
+  if(show)s+=ci([px,102],2.6,"acf");
+  return s;
+}
+function lying(an,sc,x,y){
+  var g=fig({hip:[100,100],tor:-90,legs:[{th:90,kn:0,an:an},{th:90,kn:0,an:an}],arms:[{sh:93,el:0},{sh:93,el:0}]});
+  return grp(x,y,sc,ln([45,106],[160,106],"fl")+g.svg);
+}
+var HANDS_ON_HIPS=[{a1:40,a2:-35},{a1:40,a2:-35}];
+
+A.bear={T:1.6,f:function(p){
+  var w=2*PI*p,l1=7*Math.max(0,Math.sin(w)),l2=7*Math.max(0,-Math.sin(w));
+  return ln([8,110],[66,110],"fl")+figF({x:36,y:57,sc:0.55,legs:[{ank:[31,105-l1*1.4]},{ank:[41,105-l2*1.4]}],arms:HANDS_ON_HIPS})+
+    ln([92,102],[236,102],"fl")+legFront(140,-1,{tilt:14,lift:l1})+legFront(186,1,{tilt:14,lift:l2})+
+    tx(165,116,"спереди: идём на наружных краях","capa");
+}};
+A.rollouts={T:2.8,f:function(p){
+  var u=ease(p),t=16*u;
+  return ln([8,110],[66,110],"fl")+figF({x:36,y:57,sc:0.55,legs:[{ank:[30,105]},{ank:[42,105]}],arms:HANDS_ON_HIPS})+
+    ln([92,102],[236,102],"fl")+legFront(140,-1,{tilt:t})+legFront(186,1,{tilt:t})+
+    tx(165,116,u>0.5?"спереди: на наружных краях":"спереди: стопы ровно",u>0.5?"capa":"cap");
+}};
+A.raise={T:2.6,f:function(p){
+  var u=ease(p),h=13*u;
+  var g=grounded(function(hy){return fig({hip:[56,hy],tor:2,far:[-2,0],legs:[{th:0,kn:0,an:-40*u},{th:0,kn:0,an:-40*u}],arms:[{to:[80,51],side:1},{sh:6,el:0}]});},110);
+  var a=g.legs[0].ank;
+  return chair(95,84)+ln([4,110],[116,110],"fl")+g.svg+ci([a[0]+1,a[1]+1],4,"ball")+tx(40,118,"сбоку")+
+    divider()+ln([126,102],[236,102],"fl")+legBack(163,-1,{lift:h,axis:1})+legBack(197,1,{lift:h,axis:1})+ci([180,82-h],10,"ball")+
+    tx(181,116,"сзади: пятки ровно");
+}};
+A.shortfoot={T:4,f:function(p){
+  var u=sm(Math.min(1,ease(p)*1.3)),sc=1.9,x=26,y=100,o={sc:sc,arch:u,s:0.35*u,shin:42};
+  var bx=40-7*o.s-11,ah=3+6*u+2.5*o.s,ax=x+0.45*bx*sc,ballX=x+bx*sc,tipX=x+(bx+11)*sc;
+  var s=ln([4,y+1],[132,y+1],"fl")+'<g transform="translate('+x+" "+y+") scale("+sc+')"><path d="M0 0Q'+f1(0.45*bx)+" "+f1(-2*ah)+" "+f1(bx)+' 0Z" class="gap"/></g>'+footSide(x,y,o);
+  s+='<g opacity="'+f1(0.3+0.7*u)+'">'+arrow([ax,y-1],[ax,y-5-ah*sc*0.85])+ln([ballX,y+5],[tipX,y+5],"ac")+arrow([ballX+4,y+11],[ballX-14,y+11])+"</g>";
+  s+=arrow([150,48],[150,32])+tx(160,44,"свод — вверх","cap","start");
+  s+=ln([143,66],[157,66],"ac")+tx(160,69,"пальцы на полу","cap","start");
+  s+=arrow([157,90],[143,90])+tx(160,93,"стопа короче","cap","start");
+  return s;
+}};
+A.rollwalk={T:2.4,f:function(p){
+  var left=grp(-30.5,27.5,0.75,walk((p*2)%1,{bare:1,an:function(th,c){var w=sm((0.3-c)/0.6);return w*th*1.1+(1-w)*6;},arms:function(w){return [{sh:-14*Math.sin(w),el:14},{sh:14*Math.sin(w),el:14}];}}));
+  var sc=1.3,X=138,Y=100,bx=29,rot=0,px=0,lift=0,act=0,cp=null;
+  if(p<0.25){rot=lerp(-22,0,sm(p/0.25));cp=[X,Y];act=0;}
+  else if(p<0.5){cp=[X+14*sc,Y];act=1;}
+  else if(p<0.8){rot=lerp(0,32,sm((p-0.5)/0.3));px=bx;cp=[X+bx*sc,Y];act=2;}
+  else{var k=sm((p-0.8)/0.2);rot=lerp(32,-22,k);px=lerp(bx,0,k);lift=10*Math.sin(PI*k);act=-1;}
+  var s=ln([6,110],[114,110],"fl")+left+divider()+ln([126,Y+1],[236,Y+1],"fl")+footSide(X,Y-lift,{sc:sc,rot:rot,px:px,shin:40});
+  if(cp)s+=ci(cp,3,"acf");
+  s+=tx(138,116,"пятка",act===0?"capa":"cap")+tx(155,116,"→")+tx(180,116,"вся стопа",act===1?"capa":"cap")+tx(205,116,"→")+tx(223,116,"носок",act===2?"capa":"cap");
+  return s;
+}};
+A.wipers={T:2.4,f:function(p){
+  var a=11*ease(p),s=lying(0,0.8,-8.4,15)+tx(58,114,"лёжа, ноги прямые")+divider();
+  [[164,0],[200,1]].forEach(function(q){s+='<rect x="'+(q[0]-5)+'" y="88" width="10" height="34" class="ft"/>';});
+  s+=footTop(164,90,{cls:"gh"})+footTop(200,90,{mir:1,cls:"gh"})+footTop(164,90,{rot:a})+footTop(200,90,{mir:1,rot:-a});
+  s+=ci([164,90],2.6,"acf")+ci([200,90],2.6,"acf")+arcA(164,90,54,252,266)+arcA(200,90,54,288,274);
+  return s+tx(182,12,"вид сверху: пятки на месте","capa");
+}};
+A.ladoshki={T:3,f:function(p){
+  var u=ease(p),s=lying(25*u,0.9,-37,4)+arcA(96,94,12,300,245)+tx(58,116,"лёжа: носки на себя")+divider();
+  [[-1,162],[1,202]].forEach(function(d){
+    var sd=d[0],x=d[1],mir=sd>0,sx=1-0.55*u,sy=1-0.1*u,cx=x-sd*4*u;
+    s+=footTop(x,96,{mir:mir,cls:"gh"});
+    s+=footTop(cx+sd*8*u,96,{mir:mir,sx:sx*0.9,sy:sy,cls:"sd"});
+    s+=footTop(cx,96,{mir:mir,sx:sx,sy:sy});
+  });
+  s+=arcA(162,34,11,205,325)+arcA(202,34,11,335,215)+tx(182,12,"вид со стороны стоп");
+  return s+tx(182,114,u>0.5?"подошвы — друг к другу":"поворот подошв внутрь",u>0.5?"capa":"cap");
 }};
 
 return A;
