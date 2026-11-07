@@ -98,6 +98,11 @@ h1,h2,h3{text-wrap:balance}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .splash .quote{animation:rise .5s ease-out both}
 
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--line)}
+.plan{border:0;border-radius:11px;background:transparent;padding:9px 8px;font-weight:700;font-size:16px;display:grid;gap:1px;color:var(--muted)}
+.plan small{font-weight:500;font-size:12px;font-variant-numeric:tabular-nums}
+.plan[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;min-height:54px;padding:0 20px;font-weight:700;font-size:17px;text-align:center}
 .btn-main{background:var(--accent);color:var(--accent-ink)}
 .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);font-weight:600}
@@ -235,6 +240,11 @@ h1,h2,h3{text-wrap:balance}
     <div class="week" id="h-week"></div>
     <p class="streak-note" id="h-note"></p>
   </section>
+
+  <div class="plans" role="tablist" aria-label="Вариант занятия">
+    <button type="button" role="tab" class="plan" id="tab-short">30 минут<small></small></button>
+    <button type="button" role="tab" class="plan" id="tab-full">Полный<small></small></button>
+  </div>
 
   <div class="cta">
     <button class="btn btn-main" id="h-start" type="button">Начать тренировку</button>
@@ -825,6 +835,49 @@ return A;
 var ANIM_KEYS=["circles","noski","soldier","penguin","bear","rollwalk","ladoshki","claps","wipers","caterpillar","towel","cleanup","rollpin","hedgehog","artist","shortfoot","raise","rollouts","tightrope","heron","fivepoints","angel","wallsit","bike","stowel","swall","rags"];
 EX.forEach(function(e,i){e.anim=ANIM_KEYS[i];});
 
+/* ---------- Планы: полный и 30 минут ---------- */
+var FULL_BLOCKS=BLOCKS,BY={};
+EX.forEach(function(e){BY[e.short]=e;});
+function pick(name,over){ // упражнение из полного комплекса с укороченной дозировкой
+  var e=Object.assign({},BY[name]);delete e.group;delete e.setWord;
+  return Object.assign(e,over||{});
+}
+var SHORT_BLOCKS=[
+ {n:1,name:"Разминка",ex:[
+  pick("Рисуем круги ногами",{dose:"8 кругов внутрь + 8 наружу",steps:[R("8 кругов внутрь"),R("8 кругов наружу")]}),
+  pick("Тянем носочки",{dose:"12 раз",steps:[R("12 раз")]}),
+  pick("Медвежонок",{dose:"1 минута",steps:[T(60,{label:"Шагаем на наружном крае"})]}),
+  pick("Ходьба с перекатом",{dose:"30 секунд",steps:[T(30,{label:"Шагаем с перекатом"})]})
+ ]},
+ {n:2,name:"Основной комплекс",ex:[
+  pick("Ладошки",{group:"Лёжа на спине",dose:"15 раз с задержкой 3 секунды, 2 подхода",steps:sets(2,function(){return H(15,3,2);})}),
+  pick("Дворники",{dose:"20 раз, 2 подхода",steps:sets(2,function(){return R("20 раз");})}),
+  pick("Собери платок",{group:"Сидя на стуле",dose:"4 раза каждой ногой; правой — 6",steps:[R("4 раза",{side:"L"}),R("6 раз",{side:"R",more:true})]}),
+  pick("Уборка",{dose:"все предметы одной ногой, потом другой",steps:[R("Все предметы",{side:"L"}),R("Все предметы",{side:"R"})]}),
+  pick("Скалка",{dose:"1 минута каждой ногой; правой — 1,5 минуты",steps:[T(60,{side:"L"}),T(90,{side:"R",more:true})]}),
+  pick("Короткая стопа",{group:"Стоя",dose:"10 раз с задержкой 5 секунд, 2 подхода",steps:sets(2,function(){return H(10,5,3);})}),
+  pick("Подъём на носки",{dose:"15 раз, 2 подхода",steps:sets(2,function(){return R("15 раз");})}),
+  pick("Перекаты",{dose:"20 раз",steps:[R("20 раз")]}),
+  pick("Цапля",{setWord:"Раз",dose:"30 секунд на каждой ноге, 2 раза",steps:sets(2,function(){return [T(30,{side:"L",sideText:"Стоим на левой"}),T(30,{side:"R",sideText:"Стоим на правой"})];},0)})
+ ]},
+ {n:3,name:"У стены — для осанки",ex:[
+  pick("Пять точек"),
+  pick("Стульчик",{dose:"8 раз с задержкой 10 секунд",steps:[H(8,10,5)]})
+ ]},
+ {n:4,name:"Заминка",ex:[
+  pick("Растяжка у стены",{setWord:"",dose:"30 секунд каждой ногой",steps:[T(30,{side:"L",sideText:"Левая нога сзади"}),T(30,{side:"R",sideText:"Правая нога сзади"})]}),
+  pick("Тряпочки")
+ ]}
+];
+var PLANS={short:{title:"30 минут",blocks:SHORT_BLOCKS},full:{title:"Полный",blocks:FULL_BLOCKS}};
+function flatten(blocks){
+  var out=[];
+  blocks.forEach(function(b,bi){var grp=null;b.ex.forEach(function(e,j){if(e.group)grp=e.group;e.grp=grp;e.bi=bi;e.num=j+1;e.idx=out.length;out.push(e);});});
+  return out;
+}
+var PLAN="short";
+function usePlan(id){PLAN=PLANS[id]?id:"short";BLOCKS=PLANS[PLAN].blocks;EX=flatten(BLOCKS);}
+
 /* ---------- Helpers ---------- */
 var $=function(id){return document.getElementById(id);};
 var store={
@@ -865,8 +918,12 @@ function unlock(){
   }catch(e){}
   primeSpeech();
 }
+function ensureAudio(){ // Android «усыпляет» звук после блокировки экрана, звонка или голосовой подсказки — будим
+  try{if(AC&&AC.state!=="running"&&AC.state!=="closed")AC.resume();}catch(e){}
+}
 function beep(f,d,v,delay){
   if(!AC||!SET.beep||S.muted)return;
+  ensureAudio();
   try{
     var t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();
     o.type="sine";o.frequency.value=f;
@@ -1003,6 +1060,8 @@ function mstep(i,t){
 }
 function mschedule(){
   if(!MUS.on||!AC)return;
+  if(AC.state!=="running"){ensureAudio();return;}
+  if(MUS.next<AC.currentTime)MUS.next=AC.currentTime+0.05; // после задержки не «догоняем» пропущенное
   while(MUS.next<AC.currentTime+0.3){mstep(MUS.i,MUS.next);MUS.next+=S16;MUS.i=(MUS.i+1)%LOOP;}
 }
 function musGain(target,sec){
@@ -1012,6 +1071,7 @@ function musGain(target,sec){
 }
 function musicStart(){
   if(MUS.on||!AC||!musBus())return;
+  ensureAudio();
   MUS.on=true;MUS.next=AC.currentTime+0.08;
   musGain(MVOL,0.8);mschedule();MUS.timer=setInterval(mschedule,60);
 }
@@ -1026,7 +1086,7 @@ function updateMusic(){
     if(S.phase==="manual")want=true;
     else if(S.phase==="run"){var sg=S.segs[S.si];want=!!sg&&(sg.p==="work"||sg.p==="hold"||sg.p==="relax");}
   }
-  if(want)musicStart();else musicStop();
+  if(want){ensureAudio();if(MUS.on&&!MUS.duckT)musGain(MVOL,0.2);musicStart();}else musicStop();
 }
 function vibrate(p){try{if(SET.beep&&!S.muted&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
@@ -1056,7 +1116,7 @@ function say(t){
       try{
         if(ss.paused)ss.resume();
         var u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=1.05;
-        u.onstart=function(){duck(true);};u.onend=u.onerror=function(){duck(false);};
+        u.onstart=function(){duck(true);clearTimeout(MUS.duckT);MUS.duckT=setTimeout(function(){duck(false);},Math.max(1500,t.length*90));};u.onend=u.onerror=function(){clearTimeout(MUS.duckT);duck(false);};
         lastUtt=u; // держим ссылку, иначе Chrome может оборвать фразу
         ss.speak(u);
       }catch(e){}
@@ -1387,12 +1447,21 @@ function renderHome(){
   else note="Сегодня готово. До медали: <b>"+left+" "+plural(left,["день","дня","дней"])+"</b>.";
   $("h-note").innerHTML=note+" Всего занятий: "+h.length+".";
   var pr=store.get("ss_progress",null),rb=$("h-resume");
-  if(pr&&pr.date===today()&&pr.ex>0&&pr.ex<EX.length&&h.indexOf(today())<0){
+  if(pr&&pr.date===today()&&(pr.plan||"full")===PLAN&&pr.ex>0&&pr.ex<EX.length&&h.indexOf(today())<0){
     rb.hidden=false;rb.textContent="Продолжить с упражнения "+(pr.ex+1)+" — "+EX[pr.ex].short;rb.dataset.ex=pr.ex;
   }else rb.hidden=true;
 }
+function planSec(id){return PLANS[id].blocks.reduce(function(a,b){return a+b.ex.reduce(function(x,e){return x+exSec(e);},0);},0);}
+function renderTabs(){
+  ["short","full"].forEach(function(id){
+    var t=$("tab-"+id),n=PLANS[id].blocks.reduce(function(x,b){return x+b.ex.length;},0);
+    t.setAttribute("aria-selected",PLAN===id?"true":"false");
+    t.querySelector("small").textContent="≈ "+Math.round(planSec(id)/60)+" мин · "+n+" упр.";
+  });
+}
+function setPlan(id){usePlan(id);store.set("ss_plan",PLAN);buildBlocks();renderTabs();renderHome();}
 function buildBlocks(){
-  var root=$("h-blocks"),total=0;
+  var root=$("h-blocks"),total=0;root.textContent="";
   BLOCKS.forEach(function(b){
     var sec=b.ex.reduce(function(a,e){return a+exSec(e);},0);total+=sec;
     var s=document.createElement("section");s.className="blk";
@@ -1413,7 +1482,7 @@ function buildBlocks(){
     });
     root.appendChild(s);
   });
-  $("h-meta").textContent=BLOCKS.length+" блока · "+EX.length+" упражнений · ≈ "+Math.round(total/60)+" мин";
+  $("h-meta").textContent=PLANS[PLAN].title+": "+BLOCKS.length+" блока · "+EX.length+" упражнений · ≈ "+Math.round(total/60)+" мин";
 }
 
 /* ---------- Views ---------- */
@@ -1423,7 +1492,7 @@ function show(v){
   if(v!=="work"){stopAnim();musicStop();}
   if(v==="home"){renderHome();window.scrollTo(0,0);}
 }
-function saveProgress(){store.set("ss_progress",{date:today(),ex:S.ex});}
+function saveProgress(){store.set("ss_progress",{date:today(),ex:S.ex,plan:PLAN});}
 function startFrom(i){
   unlock();
   S.ex=i;S.st=0;S.startedAt=0;S.muted=false;S.animEx=-1;settle();
@@ -1438,7 +1507,9 @@ function closeWork(){
 
 /* ---------- Wiring ---------- */
 function start(data){
-  buildBlocks();
+  usePlan(store.get("ss_plan","short"));
+  buildBlocks();renderTabs();
+  ["short","full"].forEach(function(id){$("tab-"+id).addEventListener("click",function(){if(PLAN!==id)setPlan(id);});});
   $("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;
   $("opt-beep").addEventListener("change",function(e){SET.beep=e.target.checked;store.set("ss_set",SET);if(SET.beep){unlock();tone("ready");}});
   $("opt-music").checked=!!SET.music;
@@ -1461,7 +1532,7 @@ function start(data){
   });
   document.addEventListener("visibilitychange",function(){
     if(document.hidden){musicStop();return;}
-    updateMusic();
+    ensureAudio();updateMusic();
     try{if(canSpeak){window.speechSynthesis.cancel();loadVoices();}}catch(e){}
     if(S.view==="work"&&(S.phase==="run"||S.phase==="manual"))wake(true);
   });
