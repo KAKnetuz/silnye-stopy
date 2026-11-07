@@ -68,6 +68,36 @@ h1,h2,h3{text-wrap:balance}
 .day.today i{border-color:var(--ink)}
 .day.on.today i{border-color:var(--accent)}
 
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.wk{height:36px;border-radius:10px;border:1.5px solid var(--line);display:grid;place-items:center;font-family:var(--f-num);font-size:13px;font-weight:700;color:var(--muted)}
+.wk.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.wk svg{width:22px;height:26px}
+.streak-note{margin:0;font-size:14px;color:var(--muted);line-height:1.4}
+.streak-note b{color:var(--ink);font-weight:600}
+.medals{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.medals svg{width:24px;height:28px}
+.medals span{font-family:var(--f-num);font-weight:700;font-size:15px;margin-left:4px}
+.md-c{fill:var(--accent)} .md-r{fill:var(--calm)} .md-t{fill:var(--accent-ink);font:700 9px var(--f-num)}
+.md.off .md-c{fill:none;stroke:var(--line);stroke-width:1.5} .md.off .md-r{fill:var(--line)} .md.off .md-t{fill:var(--muted)}
+.newmedal{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 18px;border-radius:16px;background:var(--accent-soft)}
+.newmedal svg{width:56px;height:66px}
+.newmedal b{font-family:var(--f-display);font-size:17px}
+.newmedal span{font-size:14px;color:var(--muted)}
+
+.splash{z-index:30;cursor:pointer}
+.splash-c{flex:1;max-width:560px;width:100%;margin:0 auto;display:flex;flex-direction:column;justify-content:center;gap:22px;padding-left:max(24px, env(safe-area-inset-left,0px));padding-right:max(24px, env(safe-area-inset-right,0px));padding-block:32px}
+.splash h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,8vw,36px);line-height:1.05;margin:0}
+.quote{margin:0;display:grid;gap:12px}
+.quote blockquote{margin:0;font-size:clamp(20px,5.6vw,26px);line-height:1.35;font-weight:600;text-wrap:pretty}
+.quote blockquote::before{content:"«";display:block;font-family:var(--f-display);font-size:56px;line-height:.7;color:var(--accent);margin-bottom:6px}
+.quote figcaption{color:var(--muted);font-size:16px}
+.splash-bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.splash-bar i{display:block;height:100%;width:0;background:var(--accent)}
+.splash.go .splash-bar i{width:100%;transition:width 8s linear}
+.splash-c .btn{align-self:stretch}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.splash .quote{animation:rise .5s ease-out both}
+
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;min-height:54px;padding:0 20px;font-weight:700;font-size:17px;text-align:center}
 .btn-main{background:var(--accent);color:var(--accent-ink)}
 .btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);font-weight:600}
@@ -141,6 +171,7 @@ h1,h2,h3{text-wrap:balance}
 .anim .cap{fill:var(--muted);font:600 8px var(--f-body);letter-spacing:.01em}
 .anim .capa{fill:var(--accent);font:700 8px var(--f-body);letter-spacing:.01em}
 .anim .gap{fill:var(--accent-soft)}
+.anim .solea{fill:var(--accent-soft);stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round}
 
 .dial{position:relative;width:min(58vw,30vh,230px);max-width:100%;aspect-ratio:1;margin:2px auto 0}
 .dial svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
@@ -196,12 +227,13 @@ h1,h2,h3{text-wrap:balance}
     <p class="meta" id="h-meta"></p>
   </header>
 
-  <section class="streak" aria-label="Регулярность занятий">
+  <section class="streak" aria-label="Серия занятий">
     <div class="streak-top">
       <div class="stat"><b id="h-streak">0</b><span id="h-streak-w">дней подряд</span></div>
-      <div class="stat"><span>всего занятий</span><b id="h-total" style="font-size:20px">0</b></div>
+      <div class="medals" id="h-medals" title="Медали за 7 дней без пропусков"></div>
     </div>
-    <div class="days" id="h-days"></div>
+    <div class="week" id="h-week"></div>
+    <p class="streak-note" id="h-note"></p>
   </section>
 
   <div class="cta">
@@ -267,7 +299,17 @@ h1,h2,h3{text-wrap:balance}
       <div class="stat"><b id="d-time">0</b><span>минут</span></div>
       <div class="stat"><b id="d-streak">1</b><span id="d-streak-w">день подряд</span></div>
     </div>
+    <div class="newmedal" id="d-medal" hidden><span class="md-big"></span><b>Новая медаль!</b><span>7 дней без пропусков</span></div>
     <button class="btn btn-main" id="d-home" type="button">На главную</button>
+  </div>
+</section>
+
+<section class="screen splash" id="splash" hidden aria-label="Цитата дня">
+  <div class="splash-c">
+    <div><p class="kicker">Ежедневная гимнастика для стоп</p><h1>Сильные стопы</h1></div>
+    <figure class="quote"><blockquote id="q-text"></blockquote><figcaption id="q-author"></figcaption></figure>
+    <div class="splash-bar"><i></i></div>
+    <button class="btn btn-main" id="q-go" type="button">Поехали</button>
   </div>
 </section>
 
@@ -761,16 +803,21 @@ A.wipers={T:2.4,f:function(p){
   s+=ci([164,90],2.6,"acf")+ci([200,90],2.6,"acf")+arcA(164,90,54,252,266)+arcA(200,90,54,288,274);
   return s+tx(182,12,"вид сверху: пятки на месте","capa");
 }};
-A.ladoshki={T:3,f:function(p){
-  var u=ease(p),s=lying(25*u,0.9,-37,4)+arcA(96,94,12,300,245)+tx(58,116,"лёжа: носки на себя")+divider();
-  [[-1,162],[1,202]].forEach(function(d){
-    var sd=d[0],x=d[1],mir=sd>0,sx=1-0.55*u,sy=1-0.1*u,cx=x-sd*4*u;
-    s+=footTop(x,96,{mir:mir,cls:"gh"});
-    s+=footTop(cx+sd*8*u,96,{mir:mir,sx:sx*0.9,sy:sy,cls:"sd"});
-    s+=footTop(cx,96,{mir:mir,sx:sx,sy:sy});
+function palm(x,y,sd,sx){ // ладонь к зрителю; большой палец с внутренней стороны
+  return '<g transform="translate('+f1(x)+" "+f1(y)+") scale("+f1(sx)+' 1)"><ellipse cx="'+(sd<0?7.5:-7.5)+'" cy="1" rx="2.6" ry="5" transform="rotate('+(sd<0?-25:25)+" "+(sd<0?7.5:-7.5)+' 1)" class="solea"/><path d="M-6 9V-7Q-6 -13 0 -13Q6 -13 6 -7V9Q6 13 0 13Q-6 13 -6 9Z" class="solea"/></g>';
+}
+A.ladoshki={T:3.2,f:function(p){
+  var u=sm(Math.min(1,ease(p)*1.25)),s=lying(25*u,0.9,-37,4)+arcA(96,94,12,300,245)+tx(58,116,"лёжа: носки на себя")+divider();
+  var soleSx=Math.max(0.14,1-0.86*u),bandSx=0.9*u;
+  [[-1,160],[1,204]].forEach(function(d){
+    var sd=d[0],x=d[1]-sd*6*u,mir=sd>0;
+    var soleX=x-sd*9.5*bandSx,bandX=x+sd*9.5*soleSx;
+    if(bandSx>0.04)s+=footTop(bandX,98,{mir:mir,sx:bandSx});
+    s+=footTop(soleX,98,{mir:mir,sx:soleSx,cls:"solea"});
+    s+=palm(d[1]-sd*6*u-sd*6*(1-soleSx),30,sd,soleSx);
   });
-  s+=arcA(162,34,11,205,325)+arcA(202,34,11,335,215)+tx(182,12,"вид со стороны стоп");
-  return s+tx(182,114,u>0.5?"подошвы — друг к другу":"поворот подошв внутрь",u>0.5?"capa":"cap");
+  s+=tx(182,10,"смотрим со стороны стоп");
+  return s+tx(182,114,u>0.5?"подошвы — как ладошки":"подошвы смотрят на тебя",u>0.5?"capa":"cap");
 }};
 
 return A;
@@ -991,7 +1038,9 @@ function finish(){
   var mins=S.startedAt?Math.max(1,Math.round((Date.now()-S.startedAt)/60000)):0;
   $("d-time").textContent=mins;$("d-time").nextElementSibling.textContent=plural(mins,["минута","минуты","минут"]);
   var st=streak();$("d-streak").textContent=st;$("d-streak-w").textContent=plural(st,["день","дня","дней"])+" подряд";
-  say("Тренировка закончена. Молодец!");
+  var nm=st>0&&st%7===0,dm=$("d-medal");dm.hidden=!nm;
+  if(nm)dm.querySelector(".md-big").innerHTML=medalSvg(false);
+  say(nm?"Тренировка закончена. Новая медаль! Семь дней без пропусков!":"Тренировка закончена. Молодец!");
   show("done");
 }
 
@@ -1138,6 +1187,33 @@ function stopAnim(){if(animRAF)cancelAnimationFrame(animRAF);animRAF=0;}
 var toastT=null;
 function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("show");},2200);}
 
+/* ---------- Quotes splash ---------- */
+var QUOTES=[{"t": "Без дисциплины не имеет значения, насколько ты хорош. Без дисциплины ты ничто", "a": "Майк Тайсон"}, {"t": "Сильный характер выковывается, только когда преодолеваешь сопротивление — и в спортивном зале, и в жизни", "a": "Арнольд Шварценеггер"}, {"t": "Победит не тот, кто сильнее, а тот, кто готов идти до конца", "a": "Федор Емельяненко"}, {"t": "Способность побеждать самого себя, без сомнения, является самым ценным из всего, что дарит спорт", "a": "Ольга Корбут"}, {"t": "Триумф не дарует настоящей силы, её формирует борьба", "a": "Арнольд Шварценеггер"}, {"t": "Я промахнулся более 9000 раз за карьеру. Проиграл почти 300 матчей. 26 раз мне доверяли победный бросок — и я промахивался. Я терпел неудачи снова и снова. Именно поэтому я преуспел", "a": "Майкл Джордан"}, {"t": "Многие люди терпят неудачу только потому, что сдаются в двух шагах от успеха", "a": "Саймон Хартли"}, {"t": "Я ненавидел каждую минуту тренировки, но я сказал себе: „Не уходи, страдай сейчас и живи всю оставшуюся жизнь чемпионом“", "a": "Мохаммед Али"}, {"t": "Самые трудные дни — это лучшие дни, потому что именно там создаются чемпионы", "a": "Гэби Дуглас"}, {"t": "Если ты чувствуешь, что сдаёшься, вспомни, ради чего ты держался до этого", "a": "Джаред Лето"}, {"t": "Теннис — это 90% психология. Остальное — техника", "a": "Бьорн Борг"}, {"t": "Если ты не контролируешь свой ум, ты не сможешь контролировать игру", "a": "Новак Джокович"}, {"t": "Настрой — это всё. Ты можешь быть в лучшей форме, но, если голова сдалась — ты проиграл", "a": "Джон Макинрой"}, {"t": "Тело достигает того, во что верит разум", "a": ""}, {"t": "Первый раунд выигрывается не кулаками, а уверенностью", "a": "Джордж Форман"}, {"t": "Если ваш уровень не растет, он снижается", "a": "Джим Афремов"}, {"t": "Я делаю то, что другие не делают, поэтому завтра сделаю то, чего другие не могут", "a": ""}, {"t": "Начните оттуда, где вы сейчас находитесь. Используйте то, что у вас есть, и делайте всё, что можете", "a": "Артур Эш"}, {"t": "Каждый день — это еще один шанс изменить свою жизнь", "a": ""}, {"t": "В каждом матче я играю одинаково — так, как будто это финал", "a": "Лионель Месси"}, {"t": "Победа — лучший способ пережить поражение", "a": "Александр Овечкин"}, {"t": "Если ты хочешь быть лучше остальных, то приготовься делать то, что остальные не хотят делать", "a": "Майкл Фелпс"}, {"t": "Путь к победе нужно спокойно подготовить, тогда и результат будет", "a": "Инна Дериглазова"}, {"t": "Мой главный соперник — это я сама. Я всегда боролась только с самой собой", "a": "Елена Исинбаева"}, {"t": "Спящему не достанется ничего, кроме снов", "a": "Серена Уильямс"}, {"t": "Каждый день надо тренироваться так, чтобы следующая тренировка была лучше прошлой!", "a": ""}, {"t": "Занятия спортом никогда не бывают лишними", "a": ""}, {"t": "Я не перестаю тренироваться, и это с каждой минутой укрепляет мой дух и тело", "a": ""}, {"t": "Мне подвластно покорение любых вершин", "a": ""}, {"t": "Всегда выбирайте самый трудный путь — на нём вы не встретите конкурентов", "a": "Шарль де Голль"}, {"t": "Вы можете быть кем угодно, если вы уделите этому время", "a": "Конор Макгрегор"}];
+var splashT=null;
+function showSplash(){
+  var last=store.get("ss_q",-1),i=Math.floor(Math.random()*QUOTES.length);
+  if(QUOTES.length>1&&i===last)i=(i+1)%QUOTES.length;
+  store.set("ss_q",i);
+  $("q-text").textContent=QUOTES[i].t;
+  var au=$("q-author");au.textContent=QUOTES[i].a?"— "+QUOTES[i].a:"";au.hidden=!QUOTES[i].a;
+  var sp=$("splash");sp.hidden=false;sp.classList.remove("go");void sp.offsetWidth;sp.classList.add("go");
+  clearTimeout(splashT);splashT=setTimeout(hideSplash,8000);
+}
+function hideSplash(){clearTimeout(splashT);$("splash").hidden=true;}
+
+/* ---------- Medals ---------- */
+var MEDAL='<svg viewBox="0 0 24 28" class="md%C%" aria-hidden="true"><path d="M6 0h5l2 9-4 3z" class="md-r"/><path d="M18 0h-5l-2 9 4 3z" class="md-r"/><circle cx="12" cy="18" r="9" class="md-c"/><text x="12" y="21.5" text-anchor="middle" class="md-t">7</text></svg>';
+function medalSvg(off){return MEDAL.replace("%C%",off?" off":"");}
+function medalCount(){
+  var h=store.get("ss_hist",[]).slice().sort(),n=0,run=0,prev=null;
+  h.forEach(function(k){
+    var d=new Date(k+"T12:00:00");
+    if(prev&&Math.round((d-prev)/86400000)===1)run++;else{n+=Math.floor(run/7);run=1;}
+    prev=d;
+  });
+  return n+Math.floor(run/7);
+}
+
 /* ---------- Home ---------- */
 function streak(){
   var h=store.get("ss_hist",[]),d=new Date(),c=0;
@@ -1150,16 +1226,20 @@ function renderHome(){
   var h=store.get("ss_hist",[]),s=streak();
   $("h-streak").textContent=s;
   $("h-streak-w").textContent=plural(s,["день","дня","дней"])+" подряд";
-  $("h-total").textContent=h.length;
-  var days=$("h-days");days.textContent="";
-  var d=new Date();d.setDate(d.getDate()-13);
-  for(var i=0;i<14;i++){
-    var k=dkey(d),el=document.createElement("div");
-    el.className="day"+(h.indexOf(k)>=0?" on":"")+(i===13?" today":"");
-    el.title=d.toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
-    el.innerHTML="<i></i>";el.appendChild(document.createTextNode(WD[d.getDay()].charAt(0)));
-    days.appendChild(el);d.setDate(d.getDate()+1);
+  var cyc=s===0?0:(s%7===0?7:s%7),doneToday=h.indexOf(today())>=0,wk=$("h-week");wk.textContent="";
+  for(var i=1;i<=7;i++){
+    var c=document.createElement("div");c.className="wk"+(i<=cyc?" on":"");
+    if(i===7)c.innerHTML=medalSvg(cyc<7);else c.textContent=i;
+    wk.appendChild(c);
   }
+  var m=medalCount(),md=$("h-medals");
+  md.innerHTML=m?medalSvg(false)+'<span>× '+m+"</span>":medalSvg(true)+"<span>0</span>";
+  var left=7-cyc,note;
+  if(s===0)note="Занимайся <b>7 дней подряд</b> — получишь медаль. Пропуск дня начинает серию заново.";
+  else if(cyc===7&&doneToday)note="<b>Медаль получена!</b> Завтра начинается новая неделя.";
+  else if(!doneToday)note="Сегодня ещё не занимались — <b>не прерывай серию</b>. До медали: "+left+" "+plural(left,["день","дня","дней"])+".";
+  else note="Сегодня готово. До медали: <b>"+left+" "+plural(left,["день","дня","дней"])+"</b>.";
+  $("h-note").innerHTML=note+" Всего занятий: "+h.length+".";
   var pr=store.get("ss_progress",null),rb=$("h-resume");
   if(pr&&pr.date===today()&&pr.ex>0&&pr.ex<EX.length&&h.indexOf(today())<0){
     rb.hidden=false;rb.textContent="Продолжить с упражнения "+(pr.ex+1)+" — "+EX[pr.ex].short;rb.dataset.ex=pr.ex;
@@ -1224,6 +1304,7 @@ function start(data){
   $("w-close").addEventListener("click",closeWork);
   $("w-mute").addEventListener("click",function(){S.muted=!S.muted;if(S.muted)hush();render();});
   $("d-home").addEventListener("click",function(){show("home");});
+  $("splash").addEventListener("click",hideSplash);
   document.addEventListener("keydown",function(e){
     if(S.view!=="work")return;
     if(e.code==="Space"&&e.target.tagName!=="BUTTON"){e.preventDefault();mainAction();}
@@ -1238,6 +1319,7 @@ function start(data){
   setInterval(tick,100);
 
   renderHome();
+  if(!(data&&data.view))showSplash();
   if(data&&data.view==="work"&&typeof data.ex==="number"){
     startFrom(Math.min(Math.max(0,data.ex),EX.length-1));
     S.st=Math.min(data.st||0,ex().steps.length-1);settle();render();
