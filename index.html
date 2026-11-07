@@ -12,7 +12,8 @@
 <title>Сильные стопы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script>(function(){try{var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Martian+Mono:wght@500;700&family=Unbounded:wght@600;700&display=swap";document.head.appendChild(l);}catch(e){}})();</script>
+<script>(function(){try{var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Martian+Mono:wght@500;700&family=Unbounded:wght@600;700&display=swap";document.head.appendChild(l);}catch(e){}})();
+(function(){var r=document.documentElement;window.__hostTheme=r.getAttribute("data-theme");try{var t=JSON.parse(localStorage.getItem("ss_theme")||"null");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
 /* Layout: one-screen app. Home = streak strip + four exercise blocks; workout = full-height view with exercise, round timer dial, instructions, controls pinned to the bottom. */
 :root{
@@ -102,6 +103,12 @@ h1,h2,h3{text-wrap:balance}
 .plan{border:0;border-radius:11px;background:transparent;padding:9px 8px;font-weight:700;font-size:16px;display:grid;gap:1px;color:var(--muted)}
 .plan small{font-weight:500;font-size:12px;font-variant-numeric:tabular-nums}
 .plan[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+.themes{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-basis:100%}
+.themes>span{font-weight:500}
+.seg{display:inline-grid;grid-template-columns:repeat(3,auto);gap:3px;padding:3px;border-radius:12px;background:var(--line)}
+.seg button{border:0;border-radius:9px;background:transparent;padding:6px 12px;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button[aria-checked="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;min-height:54px;padding:0 20px;font-weight:700;font-size:17px;text-align:center}
 .btn-main{background:var(--accent);color:var(--accent-ink)}
@@ -255,6 +262,13 @@ h1,h2,h3{text-wrap:balance}
     <label class="sw" for="opt-beep"><input type="checkbox" id="opt-beep" checked> Сигналы и вибрация</label>
     <label class="sw" for="opt-voice"><input type="checkbox" id="opt-voice" checked> Голосовые подсказки</label>
     <label class="sw" for="opt-music"><input type="checkbox" id="opt-music" checked> Музыка во время упражнений</label>
+    <div class="themes"><span id="theme-lbl">Тема</span>
+      <div class="seg" role="radiogroup" aria-labelledby="theme-lbl">
+        <button type="button" role="radio" id="th-auto" data-th="auto">Авто</button>
+        <button type="button" role="radio" id="th-light" data-th="light">Светлая</button>
+        <button type="button" role="radio" id="th-dark" data-th="dark">Тёмная</button>
+      </div>
+    </div>
     <p class="note" id="voice-note" hidden>На этом устройстве нет русского голоса для подсказок — останутся звуковые сигналы.</p>
   </div>
 
@@ -1404,6 +1418,23 @@ function stopAnim(){if(animRAF)cancelAnimationFrame(animRAF);animRAF=0;}
 var toastT=null;
 function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("show");},2200);}
 
+/* ---------- Тема оформления ---------- */
+var THEME_META=null;
+function applyTheme(t){
+  var r=document.documentElement;
+  try{
+    if(t==="light"||t==="dark")r.setAttribute("data-theme",t);
+    else if(window.__hostTheme)r.setAttribute("data-theme",window.__hostTheme);
+    else r.removeAttribute("data-theme");
+  }catch(e){}
+  try{ // цвет строки состояния в установленной версии
+    var ms=document.querySelectorAll('meta[name="theme-color"]');
+    if(!THEME_META){THEME_META=[];ms.forEach(function(m){THEME_META.push(m.getAttribute("content"));});}
+    ms.forEach(function(m,i){m.setAttribute("content",t==="dark"?"#0E1521":t==="light"?"#ECF0F4":THEME_META[i]);});
+  }catch(e){}
+  ["auto","light","dark"].forEach(function(id){var b=$("th-"+id);if(b)b.setAttribute("aria-checked",(t===id||(id==="auto"&&t!=="light"&&t!=="dark"))?"true":"false");});
+}
+
 /* ---------- Quotes splash ---------- */
 var QUOTES=[{"t": "Без дисциплины не имеет значения, насколько ты хорош. Без дисциплины ты ничто", "a": "Майк Тайсон"}, {"t": "Сильный характер выковывается, только когда преодолеваешь сопротивление — и в спортивном зале, и в жизни", "a": "Арнольд Шварценеггер"}, {"t": "Победит не тот, кто сильнее, а тот, кто готов идти до конца", "a": "Федор Емельяненко"}, {"t": "Способность побеждать самого себя, без сомнения, является самым ценным из всего, что дарит спорт", "a": "Ольга Корбут"}, {"t": "Триумф не дарует настоящей силы, её формирует борьба", "a": "Арнольд Шварценеггер"}, {"t": "Я промахнулся более 9000 раз за карьеру. Проиграл почти 300 матчей. 26 раз мне доверяли победный бросок — и я промахивался. Я терпел неудачи снова и снова. Именно поэтому я преуспел", "a": "Майкл Джордан"}, {"t": "Многие люди терпят неудачу только потому, что сдаются в двух шагах от успеха", "a": "Саймон Хартли"}, {"t": "Я ненавидел каждую минуту тренировки, но я сказал себе: „Не уходи, страдай сейчас и живи всю оставшуюся жизнь чемпионом“", "a": "Мохаммед Али"}, {"t": "Самые трудные дни — это лучшие дни, потому что именно там создаются чемпионы", "a": "Гэби Дуглас"}, {"t": "Если ты чувствуешь, что сдаёшься, вспомни, ради чего ты держался до этого", "a": "Джаред Лето"}, {"t": "Теннис — это 90% психология. Остальное — техника", "a": "Бьорн Борг"}, {"t": "Если ты не контролируешь свой ум, ты не сможешь контролировать игру", "a": "Новак Джокович"}, {"t": "Настрой — это всё. Ты можешь быть в лучшей форме, но, если голова сдалась — ты проиграл", "a": "Джон Макинрой"}, {"t": "Тело достигает того, во что верит разум", "a": ""}, {"t": "Первый раунд выигрывается не кулаками, а уверенностью", "a": "Джордж Форман"}, {"t": "Если ваш уровень не растет, он снижается", "a": "Джим Афремов"}, {"t": "Я делаю то, что другие не делают, поэтому завтра сделаю то, чего другие не могут", "a": ""}, {"t": "Начните оттуда, где вы сейчас находитесь. Используйте то, что у вас есть, и делайте всё, что можете", "a": "Артур Эш"}, {"t": "Каждый день — это еще один шанс изменить свою жизнь", "a": ""}, {"t": "В каждом матче я играю одинаково — так, как будто это финал", "a": "Лионель Месси"}, {"t": "Победа — лучший способ пережить поражение", "a": "Александр Овечкин"}, {"t": "Если ты хочешь быть лучше остальных, то приготовься делать то, что остальные не хотят делать", "a": "Майкл Фелпс"}, {"t": "Путь к победе нужно спокойно подготовить, тогда и результат будет", "a": "Инна Дериглазова"}, {"t": "Мой главный соперник — это я сама. Я всегда боролась только с самой собой", "a": "Елена Исинбаева"}, {"t": "Спящему не достанется ничего, кроме снов", "a": "Серена Уильямс"}, {"t": "Каждый день надо тренироваться так, чтобы следующая тренировка была лучше прошлой!", "a": ""}, {"t": "Занятия спортом никогда не бывают лишними", "a": ""}, {"t": "Я не перестаю тренироваться, и это с каждой минутой укрепляет мой дух и тело", "a": ""}, {"t": "Мне подвластно покорение любых вершин", "a": ""}, {"t": "Всегда выбирайте самый трудный путь — на нём вы не встретите конкурентов", "a": "Шарль де Голль"}, {"t": "Вы можете быть кем угодно, если вы уделите этому время", "a": "Конор Макгрегор"}];
 var splashT=null;
@@ -1524,6 +1555,8 @@ function start(data){
   ["short","full"].forEach(function(id){$("tab-"+id).addEventListener("click",function(){if(PLAN!==id)setPlan(id);});});
   $("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;
   $("opt-beep").addEventListener("change",function(e){SET.beep=e.target.checked;store.set("ss_set",SET);if(SET.beep){unlock();tone("ready");}});
+  applyTheme(store.get("ss_theme","auto"));
+  ["auto","light","dark"].forEach(function(id){$("th-"+id).addEventListener("click",function(){store.set("ss_theme",id);applyTheme(id);});});
   $("opt-music").checked=!!SET.music;
   $("opt-music").addEventListener("change",function(e){SET.music=e.target.checked;store.set("ss_set",SET);updateMusic();});
   $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice){primed=false;primeSpeech();say("Подсказки включены");}});
