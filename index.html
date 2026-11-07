@@ -803,21 +803,19 @@ A.wipers={T:2.4,f:function(p){
   s+=ci([164,90],2.6,"acf")+ci([200,90],2.6,"acf")+arcA(164,90,54,252,266)+arcA(200,90,54,288,274);
   return s+tx(182,12,"вид сверху: пятки на месте","capa");
 }};
-function palm(x,y,sd,sx){ // ладонь к зрителю; большой палец с внутренней стороны
-  return '<g transform="translate('+f1(x)+" "+f1(y)+") scale("+f1(sx)+' 1)"><ellipse cx="'+(sd<0?7.5:-7.5)+'" cy="1" rx="2.6" ry="5" transform="rotate('+(sd<0?-25:25)+" "+(sd<0?7.5:-7.5)+' 1)" class="solea"/><path d="M-6 9V-7Q-6 -13 0 -13Q6 -13 6 -7V9Q6 13 0 13Q-6 13 -6 9Z" class="solea"/></g>';
-}
 A.ladoshki={T:3.2,f:function(p){
-  var u=sm(Math.min(1,ease(p)*1.25)),s=lying(25*u,0.9,-37,4)+arcA(96,94,12,300,245)+tx(58,116,"лёжа: носки на себя")+divider();
-  var soleSx=Math.max(0.14,1-0.86*u),bandSx=0.9*u;
-  [[-1,160],[1,204]].forEach(function(d){
-    var sd=d[0],x=d[1]-sd*6*u,mir=sd>0;
-    var soleX=x-sd*9.5*bandSx,bandX=x+sd*9.5*soleSx;
-    if(bandSx>0.04)s+=footTop(bandX,98,{mir:mir,sx:bandSx});
-    s+=footTop(soleX,98,{mir:mir,sx:soleSx,cls:"solea"});
-    s+=palm(d[1]-sd*6*u-sd*6*(1-soleSx),30,sd,soleSx);
+  var u=sm(Math.min(1,ease(p)*1.25)),s=lying(25*u,0.9,-37,4)+arcA(96,94,12,300,245)+tx(58,116,"сбоку: носки на себя")+divider();
+  // вид сверху на лежащего: голова вверху, ноги вниз, стопы торчат носками к потолку
+  s+=ci([180,9],5.5,"hd")+ln([180,15],[180,40])+ln([171,19],[189,19])+pl([[171,19],[168,40]],"k")+pl([[189,19],[192,40]],"k")+ln([174,40],[186,40]);
+  [-1,1].forEach(function(sd){
+    var ank=[180+sd*(18-6*u),76],ang=sd*85*u,c=[ank[0],ank[1]+10],m=-sd,toes="";
+    s+=ln([180+sd*6,40],ank);
+    [[7.5,2.9],[2.8,2.2],[-1.5,2],[-5.4,1.8],[-8.8,1.6]].forEach(function(q){toes+=ci([c[0]+m*q[0],c[1]-1.5],q[1],"ft");});
+    s+='<g transform="rotate('+f1(ang)+" "+f1(c[0])+" "+f1(c[1])+')"><rect x="'+f1(c[0]-13)+'" y="'+f1(c[1]-6)+'" width="26" height="12" rx="6" class="ft"/>'+toes+
+       ln([c[0]-10,c[1]+6.5],[c[0]+10,c[1]+6.5],"ac")+"</g>";
   });
-  s+=tx(182,10,"смотрим со стороны стоп");
-  return s+tx(182,114,u>0.5?"подошвы — как ладошки":"подошвы смотрят на тебя",u>0.5?"capa":"cap");
+  s+=tx(128,12,"вид сверху","cap","start");
+  return s+tx(182,116,u>0.5?"подошвы — как ладошки":"оранжевое — подошвы",u>0.5?"capa":"cap");
 }};
 
 return A;
