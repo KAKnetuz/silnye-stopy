@@ -765,6 +765,7 @@ function unlock(){
     if(!AC){var C=window.AudioContext||window.webkitAudioContext;if(C)AC=new C();}
     if(AC&&AC.state==="suspended")AC.resume();
   }catch(e){}
+  primeSpeech();
 }
 function beep(f,d,v,delay){
   if(!AC||!SET.beep||S.muted)return;
@@ -799,14 +800,27 @@ function loadVoices(){
 }
 var canSpeak=("speechSynthesis" in window)&&("SpeechSynthesisUtterance" in window);
 if(canSpeak){loadVoices();try{window.speechSynthesis.addEventListener("voiceschanged",loadVoices);}catch(e){}}
+var lastUtt=null,sayTimer=null,primed=false;
+function primeSpeech(){ // Chrome на Android включает речь только после первой фразы, сказанной по нажатию
+  if(primed||!canSpeak||!SET.voice)return;primed=true;
+  try{var u=new SpeechSynthesisUtterance(" ");u.volume=0;u.lang="ru-RU";lastUtt=u;window.speechSynthesis.speak(u);}catch(e){}
+}
 function say(t){
   if(!canSpeak||!SET.voice||S.muted||!t)return;
-  if(voicesKnown&&!ruVoice)return;
+  if(!ruVoice)loadVoices(); // голоса на Android подгружаются не сразу — перепроверяем перед каждой фразой
   try{
-    var ss=window.speechSynthesis;
-    if(ss.speaking||ss.pending)ss.cancel();
-    var u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=1.05;
-    ss.speak(u);
+    var ss=window.speechSynthesis,busy=ss.speaking||ss.pending;
+    if(busy)ss.cancel();
+    clearTimeout(sayTimer);
+    var go=function(){
+      try{
+        if(ss.paused)ss.resume();
+        var u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=1.05;
+        lastUtt=u; // держим ссылку, иначе Chrome может оборвать фразу
+        ss.speak(u);
+      }catch(e){}
+    };
+    if(busy)sayTimer=setTimeout(go,90);else go(); // сразу после cancel() Chrome теряет новую фразу
   }catch(e){}
 }
 function hush(){try{if(canSpeak)window.speechSynthesis.cancel();}catch(e){}}
@@ -1149,7 +1163,7 @@ function start(data){
   buildBlocks();
   $("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;
   $("opt-beep").addEventListener("change",function(e){SET.beep=e.target.checked;store.set("ss_set",SET);if(SET.beep){unlock();tone("ready");}});
-  $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice)say("Подсказки включены");});
+  $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice){primed=false;primeSpeech();say("Подсказки включены");}});
   $("h-start").addEventListener("click",function(){startFrom(0);});
   $("h-resume").addEventListener("click",function(e){startFrom(parseInt(e.currentTarget.dataset.ex,10)||0);});
   $("w-main").addEventListener("click",mainAction);
@@ -1164,7 +1178,11 @@ function start(data){
     else if(e.key==="ArrowRight")skipAction();
     else if(e.key==="ArrowLeft")back();
   });
-  document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.view==="work"&&(S.phase==="run"||S.phase==="manual"))wake(true);});
+  document.addEventListener("visibilitychange",function(){
+    if(document.hidden)return;
+    try{if(canSpeak){window.speechSynthesis.cancel();loadVoices();}}catch(e){}
+    if(S.view==="work"&&(S.phase==="run"||S.phase==="manual"))wake(true);
+  });
   setInterval(tick,100);
 
   renderHome();
