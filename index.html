@@ -12,7 +12,7 @@
 <title>Сильные стопы</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Martian+Mono:wght@500;700&family=Unbounded:wght@600;700&display=swap">
+<script>(function(){try{var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Martian+Mono:wght@500;700&family=Unbounded:wght@600;700&display=swap";document.head.appendChild(l);}catch(e){}})();</script>
 <style>
 /* Layout: one-screen app. Home = streak strip + four exercise blocks; workout = full-height view with exercise, round timer dial, instructions, controls pinned to the bottom. */
 :root{
@@ -244,6 +244,7 @@ h1,h2,h3{text-wrap:balance}
   <div class="opts">
     <label class="sw" for="opt-beep"><input type="checkbox" id="opt-beep" checked> Сигналы и вибрация</label>
     <label class="sw" for="opt-voice"><input type="checkbox" id="opt-voice" checked> Голосовые подсказки</label>
+    <label class="sw" for="opt-music"><input type="checkbox" id="opt-music" checked> Музыка во время упражнений</label>
     <p class="note" id="voice-note" hidden>На этом устройстве нет русского голоса для подсказок — останутся звуковые сигналы.</p>
   </div>
 
@@ -855,7 +856,7 @@ var ICON_MUTE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 var CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 /* ---------- Settings, sound, voice, screen ---------- */
-var SET=Object.assign({beep:true,voice:true},store.get("ss_set",{}));
+var SET=Object.assign({beep:true,voice:true,music:true},store.get("ss_set",{}));
 var AC=null;
 function unlock(){
   try{
@@ -883,7 +884,80 @@ function tone(k){
     case "soft": beep(587,.18,.16);break;
     case "end": beep(988,.12,.2);beep(1318,.18,.2,.14);break;
     case "done": beep(784,.12,.2);beep(988,.12,.2,.13);beep(1318,.28,.22,.26);break;
+    case "start": beep(1047,.55,.26);break;                  // длинный сигнал «старт», как в Табате
+    case "bell": bell(784,0,.3);bell(784,.32,.3);break;      // двойной гонг — конец упражнения
   }
+}
+function bell(f,delay,v){
+  if(!AC||!SET.beep||S.muted)return;
+  try{
+    var t=AC.currentTime+(delay||0);
+    [[1,1],[2.76,.45],[5.4,.22],[8.93,.1]].forEach(function(q){
+      var o=AC.createOscillator(),g=AC.createGain();o.type="sine";o.frequency.value=f*q[0];
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v*q[1],t+0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+1.5/Math.sqrt(q[0]));
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+1.6);
+    });
+  }catch(e){}
+}
+
+/* ---------- Music: лёгкий ритм только во время упражнения ---------- */
+var MVOL=0.075,MUS={on:false,bus:null,timer:null,next:0,i:0,noise:null};
+var CHORDS=[[60,64,67],[57,60,64],[53,57,60],[55,59,62]],SPB=60/112/2;
+function mtof(m){return 440*Math.pow(2,(m-69)/12);}
+function musBus(){
+  if(MUS.bus||!AC)return MUS.bus;
+  var lp=AC.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2600;
+  MUS.bus=AC.createGain();MUS.bus.gain.value=0.0001;MUS.bus.connect(lp);lp.connect(AC.destination);
+  var len=Math.floor(AC.sampleRate*0.05),buf=AC.createBuffer(1,len,AC.sampleRate),d=buf.getChannelData(0);
+  for(var k=0;k<len;k++)d[k]=(Math.random()*2-1)*(1-k/len);
+  MUS.noise=buf;return MUS.bus;
+}
+function mnote(f,t,d,type,v){
+  var o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.015);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+d+0.05);
+}
+function mhat(t,v){
+  var s=AC.createBufferSource(),hp=AC.createBiquadFilter(),g=AC.createGain();
+  s.buffer=MUS.noise;hp.type="highpass";hp.frequency.value=7000;g.gain.value=v;
+  s.connect(hp);hp.connect(g);g.connect(MUS.bus);s.start(t);
+}
+function mstep(i,t){
+  var bar=Math.floor(i/8)%4,e=i%8,ch=CHORDS[bar],B=Math.floor(i/32)%2;
+  var pat=B?[0,2,1,2,0,2,1,2]:[0,1,2,1,0,1,2,1];
+  mnote(mtof(ch[pat[e]]+12),t,SPB*0.85,"triangle",0.32);
+  if(e===0||e===4)mnote(mtof(ch[0]-12),t,SPB*3.6,"sine",0.55);
+  if(e===0)ch.forEach(function(m){mnote(mtof(m),t,SPB*7.5,"sine",0.08);});
+  if(e%2===1)mhat(t,0.18);
+  if(e===0||e===4)mnote(70,t,0.12,"sine",0.5);
+}
+function mschedule(){
+  if(!MUS.on||!AC)return;
+  while(MUS.next<AC.currentTime+0.3){mstep(MUS.i,MUS.next);MUS.next+=SPB;MUS.i=(MUS.i+1)%64;}
+}
+function musGain(target,sec){
+  if(!MUS.bus)return;
+  var g=MUS.bus.gain,t=AC.currentTime;
+  try{g.cancelScheduledValues(t);g.setValueAtTime(Math.max(0.0001,g.value),t);g.linearRampToValueAtTime(Math.max(0.0001,target),t+sec);}catch(e){}
+}
+function musicStart(){
+  if(MUS.on||!AC||!musBus())return;
+  MUS.on=true;MUS.next=AC.currentTime+0.08;
+  musGain(MVOL,0.8);mschedule();MUS.timer=setInterval(mschedule,60);
+}
+function musicStop(){
+  if(!MUS.on)return;
+  MUS.on=false;clearInterval(MUS.timer);musGain(0,0.35);
+}
+function duck(on){if(MUS.on)musGain(on?MVOL*0.3:MVOL,0.15);}
+function updateMusic(){
+  var want=false;
+  if(SET.music&&!S.muted&&S.view==="work"&&!document.hidden){
+    if(S.phase==="manual")want=true;
+    else if(S.phase==="run"){var sg=S.segs[S.si];want=!!sg&&(sg.p==="work"||sg.p==="hold"||sg.p==="relax");}
+  }
+  if(want)musicStart();else musicStop();
 }
 function vibrate(p){try{if(SET.beep&&!S.muted&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
@@ -913,6 +987,7 @@ function say(t){
       try{
         if(ss.paused)ss.resume();
         var u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=1.05;
+        u.onstart=function(){duck(true);};u.onend=u.onerror=function(){duck(false);};
         lastUtt=u; // держим ссылку, иначе Chrome может оборвать фразу
         ss.speak(u);
       }catch(e){}
@@ -955,14 +1030,14 @@ function compile(st){
 
 function settle(){ // привести текущий шаг в состояние ожидания
   S.segs=[];S.si=0;
-  S.phase=step().k==="reps"?"manual":"idle";
+  S.phase="idle"; // любое упражнение начинается с «Старт» — без музыки до начала
 }
 
 function runStep(){
   var st=step();
   if(st.k==="reps"){
     S.phase="manual";
-    tone("end");
+    tone("start");
     var pre=st.sets>1?(ex().setWord||"Подход")+" "+st.set+". ":"";
     say(pre+(st.side?sideWord(st)+". ":"")+st.text);
     render();return;
@@ -981,8 +1056,8 @@ function startSeg(){
       else if(st.side) say(sideWord(st));
       else say(st.label||"Приготовься");
       break;
-    case "work": tone("go");say("Начали");break;
-    case "hold": tone("go");say(String(seg.rep));break;
+    case "work": tone("start");say("Начали");break;
+    case "hold": tone(seg.rep===1?"start":"go");say(String(seg.rep));break;
     case "relax": tone("soft");say("Расслабь");break;
     case "rest": tone("soft");say("Отдых");break;
     case "breath": tone("soft");say("Отдыхаем. Вдох на четыре, выдох на шесть");break;
@@ -1014,12 +1089,13 @@ function endSeg(){
 }
 
 function stepDone(){
+  var cur=step();if(cur.k!=="rest"&&cur.k!=="breath")tone("bell");
   if(S.st+1<ex().steps.length){S.st++;runStep();}
   else exDone();
 }
 
 function exDone(){
-  tone("done");vibrate([180,90,180]);
+  vibrate([180,90,180]);
   var finished=ex();
   if(S.ex+1<EX.length){
     S.ex++;S.st=0;settle();saveProgress();
@@ -1030,7 +1106,7 @@ function exDone(){
 }
 
 function finish(){
-  S.phase="idle";wake(false);
+  S.phase="idle";wake(false);musicStop();tone("done");
   var h=store.get("ss_hist",[]);if(h.indexOf(today())<0){h.push(today());store.set("ss_hist",h);}
   store.set("ss_progress",null);
   var mins=S.startedAt?Math.max(1,Math.round((Date.now()-S.startedAt)/60000)):0;
@@ -1117,6 +1193,7 @@ function render(){
   var p=$("w-pips");p.textContent="";
   if(st.k==="hold"){for(var i=0;i<st.reps;i++)p.appendChild(document.createElement("i"));}
   drawDial(true);
+  updateMusic();
 }
 
 function setArc(frac,snap){
@@ -1133,6 +1210,7 @@ function drawDial(force){
   if(S.phase==="idle"){
     d.dataset.p="idle";setArc(0,true);
     if(st.k==="hold"){big.textContent=st.reps+" × "+st.hold+" с";big.classList.add("txt");}
+    else if(st.k==="reps"){big.textContent=st.text;big.classList.add("txt");}
     else big.textContent=fmt(st.sec||0);
     sub.textContent="Нажми «Старт»";
     pips(0,-1);return;
@@ -1195,7 +1273,8 @@ function showSplash(){
   $("q-text").textContent=QUOTES[i].t;
   var au=$("q-author");au.textContent=QUOTES[i].a?"— "+QUOTES[i].a:"";au.hidden=!QUOTES[i].a;
   var sp=$("splash");sp.hidden=false;sp.classList.remove("go");void sp.offsetWidth;sp.classList.add("go");
-  clearTimeout(splashT);splashT=setTimeout(hideSplash,8000);
+  var dur=Math.min(4500,Math.max(2500,1600+QUOTES[i].t.length*20));sp.querySelector(".splash-bar i").style.transitionDuration=dur+"ms";
+  clearTimeout(splashT);splashT=setTimeout(hideSplash,dur);
 }
 function hideSplash(){clearTimeout(splashT);$("splash").hidden=true;}
 
@@ -1272,7 +1351,7 @@ function buildBlocks(){
 function show(v){
   S.view=v;
   $("work").hidden=v!=="work";$("done").hidden=v!=="done";
-  if(v!=="work")stopAnim();
+  if(v!=="work"){stopAnim();musicStop();}
   if(v==="home"){renderHome();window.scrollTo(0,0);}
 }
 function saveProgress(){store.set("ss_progress",{date:today(),ex:S.ex});}
@@ -1293,6 +1372,8 @@ function start(data){
   buildBlocks();
   $("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;
   $("opt-beep").addEventListener("change",function(e){SET.beep=e.target.checked;store.set("ss_set",SET);if(SET.beep){unlock();tone("ready");}});
+  $("opt-music").checked=!!SET.music;
+  $("opt-music").addEventListener("change",function(e){SET.music=e.target.checked;store.set("ss_set",SET);updateMusic();});
   $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice){primed=false;primeSpeech();say("Подсказки включены");}});
   $("h-start").addEventListener("click",function(){startFrom(0);});
   $("h-resume").addEventListener("click",function(e){startFrom(parseInt(e.currentTarget.dataset.ex,10)||0);});
@@ -1310,7 +1391,8 @@ function start(data){
     else if(e.key==="ArrowLeft")back();
   });
   document.addEventListener("visibilitychange",function(){
-    if(document.hidden)return;
+    if(document.hidden){musicStop();return;}
+    updateMusic();
     try{if(canSpeak){window.speechSynthesis.cancel();loadVoices();}}catch(e){}
     if(S.view==="work"&&(S.phase==="run"||S.phase==="manual"))wake(true);
   });
