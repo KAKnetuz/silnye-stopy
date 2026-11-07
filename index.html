@@ -906,16 +906,17 @@ var MVOL=0.14,MUS={on:false,bus:null,timer:null,next:0,i:0,noise:null,pulse:null
 /* 8-бит: мелодия на «пищалке» (импульс 25%), бас — треугольник, ударные — шум. 144 уд/мин, 8 тактов по 16 шестнадцатых */
 var S16=60/144/4,LOOP=128;
 var NOTE={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
-function nm(s){return 12*(parseInt(s.slice(-1),10)+1)+NOTE[s[0]];}
-var MEL=["C5 E5 G5 C6 - B5 A5 G5","B4 D5 G5 B5 - A5 G5 F5","E5 - A5 - C6 B5 A5 E5","F5 A5 C6 A5 F5 - G5 A5",
-         "G5 - E5 G5 C6 - D6 E6","D6 - B5 G5 D5 G5 B5 D6","C6 A5 F5 A5 C6 D6 C6 A5","B5 - G5 - D6 - . ."];
-var ROOTS=["C3","G2","A2","F2","C3","G2","F2","G2"],TRI=[[0,4,7],[0,4,7],[0,3,7],[0,4,7],[0,4,7],[0,4,7],[0,4,7],[0,4,7]];
-var LEAD=[]; // [шаг, midi, длина в шестнадцатых]
+function nm(s){var sh=s[1]==="#"?1:0;return 12*(parseInt(s.slice(-1),10)+1)+NOTE[s[0]]+sh;}
+/* оригинальная героическая мелодия в миноре: вибрато, «подъезды» между нотами, эхо */
+var MEL=["A4 - - C5 E5 - A5 -","G5 - F5 - E5 - C5 -","D5 - G5 - B5 - D6 -","B5 - - - G5 - E5 -",
+         "A5 - C6 - B5 A5 G5 A5","F5 - A5 - C6 - F6 -","E6 - D6 - B5 - G5 -","G#5 - B5 - E6 - - -"];
+var ROOTS=["A2","F2","G2","E2","A2","F2","G2","E2"],TRI=[[0,3,7],[0,4,7],[0,4,7],[0,3,7],[0,3,7],[0,4,7],[0,4,7],[0,4,7]];
+var LEAD=[]; // [шаг, midi, длина в шестнадцатых, предыдущая нота]
 MEL.forEach(function(bar,bi){
   bar.split(" ").forEach(function(tok,j){
     var st=bi*16+j*2;
     if(tok==="-"){if(LEAD.length)LEAD[LEAD.length-1][2]+=2;}
-    else if(tok!==".")LEAD.push([st,nm(tok),2]);
+    else if(tok!==".")LEAD.push([st,nm(tok),2,LEAD.length?LEAD[LEAD.length-1][1]:0]);
   });
 });
 var LEADAT={};LEAD.forEach(function(n){LEADAT[n[0]]=n;});
@@ -940,6 +941,16 @@ function chip(f,t,d,kind,v){ // ровная «приставочная» оги
   g.gain.setValueAtTime(v,t+Math.max(0.01,d-0.03));g.gain.linearRampToValueAtTime(0.0001,t+d);
   o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+d+0.02);
 }
+function leadNote(f,pf,t,d,v){
+  var o=AC.createOscillator(),g=AC.createGain();
+  if(MUS.pulse)o.setPeriodicWave(MUS.pulse);else o.type="square";
+  o.frequency.setValueAtTime(pf||f,t);if(pf)o.frequency.exponentialRampToValueAtTime(f,t+0.035); // «подъезд» к ноте
+  if(d>0.22){var l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=6;lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(f*0.008,t+0.2);
+    l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+d+0.02);}                          // вибрато на длинных нотах
+  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+0.006);
+  g.gain.setValueAtTime(v,t+Math.max(0.01,d-0.04));g.gain.linearRampToValueAtTime(0.0001,t+d);
+  o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+d+0.02);
+}
 function noiseHit(t,d,v,type,freq){
   var s=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();
   s.buffer=MUS.noise;fl.type=type;fl.frequency.value=freq;
@@ -954,7 +965,7 @@ function kick(t){
 }
 function mstep(i,t){
   var bar=Math.floor(i/16),s=i%16,root=nm(ROOTS[bar]);
-  var ld=LEADAT[i];if(ld)chip(mtof(ld[1]),t,ld[2]*S16*0.92,"pulse",0.3);       // мелодия
+  var ld=LEADAT[i];if(ld){var dl=ld[2]*S16*0.95;leadNote(mtof(ld[1]),ld[3]?mtof(ld[3]):0,t,dl,0.3);leadNote(mtof(ld[1]),0,t+3*S16,dl,0.09);} // мелодия + эхо
   if(s%2===0)chip(mtof(root+(s%4===0?0:12)),t,S16*1.7,"triangle",0.55);         // бас «прыгает» через октаву
   chip(mtof(root+24+TRI[bar][s%3]),t,S16*0.8,"square",0.05);                    // быстрое арпеджио фоном
   if(s===0||s===8||s===10)kick(t);
