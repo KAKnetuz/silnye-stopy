@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ECF0F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1521" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Ежедневный комплекс ЛФК для стоп с таймером и анимированными схемами">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Сильные стопы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Martian+Mono:wght@500;700&family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Layout: one-screen app. Home = streak strip + four exercise blocks; workout = full-height view with exercise, round timer dial, instructions, controls pinned to the bottom. */
+:root{
+  --paper:#ECF0F4; --card:#FFFFFF; --ink:#15223A; --muted:#566377; --line:#D2DAE3;
+  --accent:#D4470F; --accent-ink:#FFFFFF; --accent-soft:#FBE4D7;
+  --calm:#2B69AD; --calm-soft:#DCE8F6;
+  --ok:#2A7F3B; --ok-ink:#FFFFFF;
+  --f-display:"Unbounded","Arial Black",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:"Martian Mono",ui-monospace,"Roboto Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1521; --card:#172030; --ink:#E7ECF3; --muted:#98A4B6; --line:#2A3647;
+    --accent:#FF7B38; --accent-ink:#1B0C03; --accent-soft:#3B2417;
+    --calm:#74A9E8; --calm-soft:#1A2B41;
+    --ok:#5FC47C; --ok-ink:#06180B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1521; --card:#172030; --ink:#E7ECF3; --muted:#98A4B6; --line:#2A3647;
+  --accent:#FF7B38; --accent-ink:#1B0C03; --accent-soft:#3B2417;
+  --calm:#74A9E8; --calm-soft:#1A2B41;
+  --ok:#5FC47C; --ok-ink:#06180B;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{text-wrap:balance}
+
+/* ---------- Home ---------- */
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:24px 48px;display:flex;flex-direction:column;gap:20px}
+.kicker,.sub,.eyebrow,.howto dt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,9vw,44px);line-height:1.02;letter-spacing:-.01em;margin:6px 0 8px}
+.meta{margin:0;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.streak{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:grid;gap:14px}
+.streak-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.stat{display:flex;align-items:baseline;gap:8px}
+.stat b{font-family:var(--f-num);font-weight:700;font-size:30px;line-height:1}
+.stat span{color:var(--muted);font-size:14px}
+.days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
+.day{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-weight:600}
+.day i{width:100%;max-width:18px;aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);display:block}
+.day.on i{background:var(--accent);border-color:var(--accent)}
+.day.today{color:var(--ink)}
+.day.today i{border-color:var(--ink)}
+.day.on.today i{border-color:var(--accent)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;min-height:54px;padding:0 20px;font-weight:700;font-size:17px;text-align:center}
+.btn-main{background:var(--accent);color:var(--accent-ink)}
+.btn-ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);font-weight:600}
+.cta{display:grid;gap:10px}
+
+.opts{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center}
+.sw{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer}
+.sw input{appearance:none;-webkit-appearance:none;width:44px;height:26px;border-radius:13px;background:var(--line);position:relative;margin:0;cursor:pointer;transition:background .15s;flex:none}
+.sw input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.sw input:checked{background:var(--accent)}
+.sw input:checked::after{transform:translateX(18px)}
+.note{font-size:13px;color:var(--muted);margin:-4px 0 0;flex-basis:100%}
+
+.blk{display:grid;gap:8px}
+.blk-h{display:flex;align-items:baseline;gap:10px;padding-top:10px;border-top:2px solid var(--ink);margin-top:6px}
+.blk-n{font-family:var(--f-num);font-size:12px;color:var(--muted);white-space:nowrap}
+.blk-h h2{font-family:var(--f-display);font-size:18px;font-weight:700;margin:0;flex:1;min-width:0}
+.blk-t{font-family:var(--f-num);font-size:12px;color:var(--muted);white-space:nowrap}
+.sub{margin-top:6px}
+.exl{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.exr{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) 18px;gap:10px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.exr:hover{border-color:var(--muted)}
+.exr-i{font-family:var(--f-num);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.exr-b{min-width:0;display:grid;gap:2px}
+.exr-n{font-weight:600}
+.exr-d{font-size:14px;color:var(--muted)}
+.exr svg{width:18px;height:18px;color:var(--muted)}
+
+/* ---------- Workout / done overlays ---------- */
+.screen{position:fixed;inset:0;z-index:20;background:var(--paper);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wbar{display:flex;align-items:center;gap:4px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:6px}
+.ibtn{width:44px;height:44px;border-radius:12px;border:0;background:transparent;display:grid;place-items:center;color:var(--ink);flex:none}
+.ibtn svg{width:22px;height:22px}
+.wbar-t{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;line-height:1.25}
+#w-block{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#w-count{font-family:var(--f-num);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.wprog{height:4px;background:var(--line);flex:none}
+.wprog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.wmain{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.wcol{max-width:560px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:16px 24px;display:flex;flex-direction:column;gap:10px}
+#w-name{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,6.6vw,30px);line-height:1.12;margin:0}
+.dose{margin:0;color:var(--muted);font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:30px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:14px;font-weight:600;line-height:1.3}
+.chip svg{width:13px;height:18px;flex:none}
+.chip.more{background:var(--accent-soft);border-color:transparent}
+.chip.rest{background:var(--calm-soft);border-color:transparent}
+
+.anim{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.anim svg{display:block;width:100%;height:auto;aspect-ratio:2/1}
+.anim .k{fill:none;stroke:var(--ink);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.anim .kf{fill:none;stroke:var(--muted);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+.anim .hd{fill:var(--ink)}
+.anim .fl{stroke:var(--line);stroke-width:2.5;stroke-linecap:round}
+.anim .pr{fill:none;stroke:var(--muted);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.anim .prf{fill:var(--line);stroke:var(--muted);stroke-width:1.5}
+.anim .ft{fill:var(--paper);stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
+.anim .ftn{fill:var(--paper)}
+.anim .ftd{fill:none;stroke:var(--ink);stroke-width:.9;stroke-linecap:round;opacity:.6}
+.anim .gh{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2.5 2.5;opacity:.7}
+.anim .sd{fill:var(--line);stroke:var(--ink);stroke-width:1.3}
+.anim .sole{fill:var(--line)}
+.anim .ac{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.anim .acf{fill:var(--accent)}
+.anim .ball{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
+.anim .dsh{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3}
+.anim .dsa{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3}
+.anim .twl{fill:none;stroke:var(--calm);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+.anim .pap{fill:var(--paper);stroke:var(--line);stroke-width:1.5}
+.anim .wall{fill:var(--line)}
+
+.dial{position:relative;width:min(58vw,30vh,230px);max-width:100%;aspect-ratio:1;margin:2px auto 0}
+.dial svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.trk{fill:none;stroke:var(--line);stroke-width:10}
+.arc{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .12s linear,stroke .2s}
+.dial[data-p="rest"] .arc,.dial[data-p="relax"] .arc,.dial[data-p="breath"] .arc{stroke:var(--calm)}
+.dial[data-p="prep"] .arc{stroke:var(--ink)}
+.dial[data-p="manual"] .arc{stroke:var(--accent-soft)}
+.breath{position:absolute;inset:13%;border-radius:50%;background:var(--calm-soft);transform:scale(.55)}
+.dial-c{position:absolute;inset:14%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+#w-big{font-family:var(--f-num);font-weight:700;font-size:clamp(38px,12.5vw,58px);line-height:1;font-variant-numeric:tabular-nums}
+#w-big.txt{font-family:var(--f-display);font-weight:700;font-size:clamp(18px,5.6vw,25px);line-height:1.15;text-wrap:balance}
+#w-sub{font-size:15px;font-weight:600;color:var(--muted);line-height:1.25}
+.dial[data-p="hold"] #w-sub,.dial[data-p="work"] #w-sub{color:var(--accent)}
+.dial[data-p="rest"] #w-sub,.dial[data-p="relax"] #w-sub,.dial[data-p="breath"] #w-sub{color:var(--calm)}
+.pips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;min-height:10px}
+.pips i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.pips i.on{background:var(--accent)}
+.pips i.cur{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--accent)}
+
+.howto{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:12px;margin:6px 0 0}
+.howto dd{margin:3px 0 0}
+.howto .goal dd{color:var(--muted);font-size:15px}
+.nextup{margin:2px 0 0;color:var(--muted);font-size:14px;text-align:center}
+
+.wctl{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:10px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:10px 12px;border-top:1px solid var(--line);background:var(--paper);flex:none}
+.side{height:56px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);display:grid;place-items:center}
+.side svg{width:24px;height:24px}
+#w-main{min-height:56px;font-size:19px}
+#w-main.is-pause{background:var(--ink);color:var(--paper)}
+#w-main.is-done{background:var(--ok);color:var(--ok-ink)}
+
+.done-c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:24px}
+.badge{width:96px;height:96px;border-radius:50%;background:var(--ok);color:var(--ok-ink);display:grid;place-items:center}
+.badge svg{width:48px;height:48px}
+.done-c h2{font-family:var(--f-display);font-size:clamp(24px,7vw,32px);margin:0;line-height:1.1}
+.done-stats{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+.done-stats .stat{flex-direction:column;align-items:center;gap:4px}
+.done-c .btn{min-width:220px}
+
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 62px);transform:translate(-50%,-8px);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s,transform .2s;z-index:40;pointer-events:none;max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="home">
+  <header class="hero">
+    <p class="kicker">Ежедневная гимнастика для стоп</p>
+    <h1>Сильные стопы</h1>
+    <p class="meta" id="h-meta"></p>
+  </header>
+
+  <section class="streak" aria-label="Регулярность занятий">
+    <div class="streak-top">
+      <div class="stat"><b id="h-streak">0</b><span id="h-streak-w">дней подряд</span></div>
+      <div class="stat"><span>всего занятий</span><b id="h-total" style="font-size:20px">0</b></div>
+    </div>
+    <div class="days" id="h-days"></div>
+  </section>
+
+  <div class="cta">
+    <button class="btn btn-main" id="h-start" type="button">Начать тренировку</button>
+    <button class="btn btn-ghost" id="h-resume" type="button" hidden></button>
+  </div>
+
+  <div class="opts">
+    <label class="sw" for="opt-beep"><input type="checkbox" id="opt-beep" checked> Сигналы и вибрация</label>
+    <label class="sw" for="opt-voice"><input type="checkbox" id="opt-voice" checked> Голосовые подсказки</label>
+    <p class="note" id="voice-note" hidden>На этом устройстве нет русского голоса для подсказок — останутся звуковые сигналы.</p>
+  </div>
+
+  <div id="h-blocks" class="blk-list"></div>
+</div>
+
+<section class="screen" id="work" hidden aria-label="Тренировка">
+  <header class="wbar">
+    <button class="ibtn" id="w-close" type="button" aria-label="Закрыть тренировку">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="wbar-t"><span id="w-block"></span><span id="w-count"></span></div>
+    <button class="ibtn" id="w-mute" type="button" aria-label="Выключить звук"></button>
+  </header>
+  <div class="wprog"><i id="w-prog"></i></div>
+  <div class="wmain">
+    <div class="wcol">
+      <p class="eyebrow" id="w-group"></p>
+      <h2 id="w-name"></h2>
+      <p class="dose" id="w-dose"></p>
+      <div class="chips" id="w-chips" aria-live="polite"></div>
+      <div class="anim"><svg viewBox="0 0 240 120" id="w-anim-svg" role="img" aria-label="Схема выполнения упражнения"></svg></div>
+      <div class="dial" id="w-dial" data-p="idle">
+        <div class="breath" id="w-breath" hidden></div>
+        <svg viewBox="0 0 200 200" aria-hidden="true"><circle class="trk" cx="100" cy="100" r="90"/><circle class="arc" id="w-arc" cx="100" cy="100" r="90" stroke-dasharray="565.49" stroke-dashoffset="565.49"/></svg>
+        <div class="dial-c"><div id="w-big"></div><div id="w-sub"></div></div>
+      </div>
+      <div class="pips" id="w-pips"></div>
+      <dl class="howto">
+        <div><dt>Исходное положение</dt><dd id="w-start"></dd></div>
+        <div><dt>Как делать</dt><dd id="w-how"></dd></div>
+        <div class="goal"><dt>Зачем</dt><dd id="w-goal"></dd></div>
+      </dl>
+      <p class="nextup" id="w-next"></p>
+    </div>
+  </div>
+  <footer class="wctl">
+    <button class="side" id="w-prev" type="button" aria-label="Назад">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="btn btn-main" id="w-main" type="button">Старт</button>
+    <button class="side" id="w-skip" type="button" aria-label="Дальше">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+  </footer>
+</section>
+
+<section class="screen" id="done" hidden aria-label="Тренировка выполнена">
+  <div class="done-c">
+    <div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2>Тренировка выполнена</h2>
+    <div class="done-stats">
+      <div class="stat"><b id="d-time">0</b><span>минут</span></div>
+      <div class="stat"><b id="d-streak">1</b><span id="d-streak-w">день подряд</span></div>
+    </div>
+    <button class="btn btn-main" id="d-home" type="button">На главную</button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Data ---------- */
+var REST = 20; // секунд отдыха между подходами
+function T(sec,o){return Object.assign({k:"time",sec:sec},o||{});}
+function R(text,o){return Object.assign({k:"reps",text:text},o||{});}
+function H(reps,hold,relax,o){return Object.assign({k:"hold",reps:reps,hold:hold,relax:relax},o||{});}
+function BR(sec,o){return Object.assign({k:"breath",sec:sec},o||{});}
+function sets(n,make,rest){
+  if(rest===undefined) rest=REST;
+  var out=[];
+  for(var i=1;i<=n;i++){
+    [].concat(make(i)).forEach(function(s){out.push(Object.assign({},s,{set:i,sets:n}));});
+    if(i<n && rest) out.push({k:"rest",sec:rest});
+  }
+  return out;
+}
+
+var BLOCKS=[
+ {n:1,name:"Разминка",ex:[
+  {name:"Рисуем круги ногами",start:"Сидя на стуле, спина прямая, ноги вытянуты вперёд, пятки на полу.",how:"Носками медленно рисуй большие круги внутрь, потом наружу. Двигается только стопа, колено неподвижно.",dose:"10 кругов внутрь + 10 наружу",goal:"Подвижность голеностопного сустава, разогрев.",
+   steps:[R("10 кругов внутрь"),R("10 кругов наружу")]},
+  {name:"Тянем носочки — тянем на себя",short:"Тянем носочки",start:"Сидя на стуле, ноги вытянуты вперёд, пятки на полу.",how:"Потяни носки от себя, как балерина, потом на себя, чтобы пальцы смотрели в потолок.",dose:"15 раз",goal:"Разогрев мышц голени, растяжка ахиллова сухожилия.",
+   steps:[R("15 раз")]},
+  {name:"«Солдатик» — ходьба на носках",short:"Солдатик",start:"Стоя, руки на поясе.",how:"Поднимись на носки как можно выше, пятки держи чуть вместе и не разводи в стороны. Шагай по комнате, спина ровная.",dose:"40–60 секунд",goal:"Укрепление икроножных мышц и мышц свода.",
+   steps:[T(60,{label:"Шагаем на носках"})]},
+  {name:"«Пингвин» — ходьба на пятках",short:"Пингвин",start:"Стоя, руки за спиной.",how:"Подними носки вверх и иди на пятках маленькими шагами, носки смотрят прямо.",dose:"30–40 секунд",goal:"Укрепление передней большеберцовой мышцы — она поднимает внутренний край стопы.",
+   steps:[T(40,{label:"Шагаем на пятках"})]},
+  {name:"«Медвежонок» — ходьба на наружном крае стопы",short:"Медвежонок",start:"Стоя, руки на поясе.",how:"Поставь стопы на внешние края, пальцы слегка подогни. Иди медленно, косолапя.",dose:"1–1,5 минуты",goal:"Тренирует супинацию — поднимает внутренний свод и выпрямляет пятку.",
+   steps:[T(90,{label:"Шагаем на наружном крае"})]},
+  {name:"Ходьба с перекатом",start:"Стоя.",how:"Шагай, ставя ногу на пятку и перекатываясь на носок, стопы параллельно.",dose:"30–40 секунд",goal:"Навык правильного шага.",
+   steps:[T(40,{label:"Шагаем с перекатом"})]}
+ ]},
+ {n:2,name:"Основной комплекс",ex:[
+  {group:"Лёжа на спине",name:"«Ладошки»",short:"Ладошки",start:"Лёжа на спине, ноги прямые, руки вдоль тела.",how:"Потяни носки на себя и поверни подошвы внутрь, будто стопы хотят похлопать друг другу. Задержись на 3–5 секунд, расслабься.",dose:"15 раз с задержкой 3–5 секунд, 3 подхода",goal:"Укрепление мышц-супинаторов, выравнивание пятки.",
+   steps:sets(3,function(){return H(15,3,2);})},
+  {name:"«Аплодисменты»",short:"Аплодисменты",start:"Лёжа на спине, колени согнуты и разведены, стопы на полу.",how:"Оторви стопы от пола и хлопни подошвами друг о друга, затем верни стопы на пол.",dose:"15–20 хлопков, 3 подхода",goal:"Супинация стоп, укрепление внутреннего свода.",
+   steps:sets(3,function(){return R("20 хлопков");})},
+  {name:"«Дворники»",short:"Дворники",start:"Лёжа на спине, ноги прямые, пятки на полу на ширине плеч.",how:"Не двигая пятками, своди носки внутрь до касания большими пальцами, затем верни в исходное положение. Наружу носки не разворачивай.",dose:"15–20 раз, 3 подхода",goal:"Исправляет разворот носков наружу.",
+   steps:sets(3,function(){return R("20 раз");})},
+  {group:"Сидя на стуле",name:"«Гусеница»",short:"Гусеница",start:"Сидя на краю стула, спина прямая, стопы на полу.",how:"Сгибая и разгибая пальцы, «ползи» стопой вперёд, подтягивая пятку к пальцам. Потом так же назад.",dose:"5 «проползаний» вперёд-назад каждой ногой",goal:"Укрепление мелких мышц подошвы, продольный свод.",
+   steps:[R("5 раз вперёд-назад",{side:"L"}),R("5 раз вперёд-назад",{side:"R"})]},
+  {name:"«Собери платок»",short:"Собери платок",start:"Сидя, под стопой расстелено полотенце, на дальнем крае — груз (бутылка воды 0,5 л).",how:"Пальцами ноги собирай полотенце под подошву, пятка остаётся на полу. Собрал — расправь и начни снова.",dose:"5 раз каждой ногой; правой — 7",goal:"Продольный и поперечный свод, сила пальцев.",
+   steps:[R("5 раз",{side:"L"}),R("7 раз",{side:"R",more:true})]},
+  {name:"«Уборка»",short:"Уборка",start:"Сидя, перед ногами 15–20 мелких предметов (карандаши, крышки, крупные бусины), сбоку — коробка.",how:"Бери предметы пальцами ноги по одному и складывай в коробку. Коробку ставь со стороны большого пальца. Можно соревноваться на время.",dose:"все предметы одной ногой, потом другой; правой — 2 раза",goal:"Поперечный свод, супинация, ловкость пальцев.",
+   steps:[R("Все предметы",{side:"L"}),R("Все предметы",{side:"R",more:true,label:"1-й раз из 2"}),R("Все предметы",{side:"R",more:true,label:"2-й раз из 2"})]},
+  {name:"«Скалка»",short:"Скалка",start:"Сидя, стопа на скалке или гимнастической палке.",how:"Катай скалку вперёд-назад от пальцев до пятки, с нажимом. Потом поставь её под середину стопы, под внутренний свод, и покатай короткими движениями.",dose:"1,5 минуты каждой ногой; правой — 2 минуты",goal:"Массаж подошвы, растяжка подошвенной фасции, стимуляция свода.",
+   steps:[T(90,{side:"L"}),T(120,{side:"R",more:true})]},
+  {name:"«Ёжик»",short:"Ёжик",start:"Сидя, массажный мячик диаметром 6–8 см под стопой.",how:"Катай мячик по кругу и вперёд-назад. Потом обхвати его пальцами, подними и подержи 5 секунд.",dose:"1 минута катания + 8–10 подъёмов каждой ногой; правой — 12–13 подъёмов",goal:"Массаж, сила пальцев, свод.",
+   steps:[T(60,{side:"L",label:"Катаем мячик"}),H(10,5,3,{side:"L",label:"Подъёмы мячика"}),T(60,{side:"R",label:"Катаем мячик"}),H(13,5,3,{side:"R",more:true,label:"Подъёмы мячика"})]},
+  {name:"«Художник»",short:"Художник",start:"Сидя, между большим и вторым пальцами — карандаш или фломастер, на полу лист бумаги.",how:"Напиши ногой своё имя или нарисуй фигуру.",dose:"3 рисунка или слова каждой ногой",goal:"Координация, мышцы пальцев и свода.",
+   steps:[R("3 рисунка",{side:"L"}),R("3 рисунка",{side:"R"})]},
+  {group:"Стоя",name:"«Короткая стопа»",short:"Короткая стопа",start:"Стоя, стопы параллельно, при необходимости рукой держаться за спинку стула.",how:"Не поджимая пальцы, «укороти» стопу — подтяни подушечку под большим пальцем к пятке, чтобы внутренний свод поднялся «мостиком». Пальцы лежат на полу ровно.",dose:"10–12 раз с задержкой 5–8 секунд, 3 подхода",goal:"Активное формирование продольного свода.",
+   steps:sets(3,function(){return H(12,5,3);})},
+  {name:"Подъём на носки с мячиком",short:"Подъём на носки",start:"Стоя у стула, теннисный мяч зажат между лодыжками над пятками.",how:"Медленно поднимись на носки, не уронив мяч, задержись на 2 секунды, медленно опустись.",dose:"15 раз, 3 подхода",goal:"Выравнивание пяток, задняя большеберцовая и икроножные мышцы.",
+   steps:sets(3,function(){return R("15 раз");})},
+  {name:"«Перекаты»",short:"Перекаты",start:"Стоя, стопы параллельно на ширине плеч, руки на поясе.",how:"Перекатывайся с полной стопы на наружные края и обратно.",dose:"15–20 раз, 2 подхода",goal:"Супинация под весом тела.",
+   steps:sets(2,function(){return R("20 раз");})},
+  {name:"«Канатоходец»",short:"Канатоходец",start:"Стоя на скалке или гимнастической палке, держась за стул.",how:"Иди по палке приставным шагом боком, чтобы она приходилась под внутренний свод.",dose:"5 проходов в каждую сторону",goal:"Формирование свода, равновесие.",
+   steps:[R("5 проходов влево"),R("5 проходов вправо")]},
+  {name:"«Цапля»",short:"Цапля",setWord:"Раз",start:"Стоя на одной ноге, другая согнута, руки в стороны.",how:"Стой ровно, стопа опорной ноги не заваливается внутрь. Усложнение — с закрытыми глазами.",dose:"30–45 секунд на каждой ноге, 3 раза",goal:"Равновесие, мелкие мышцы стопы и голени.",
+   steps:sets(3,function(){return [T(45,{side:"L",sideText:"Стоим на левой"}),T(45,{side:"R",sideText:"Стоим на правой"})];},0)}
+ ]},
+ {n:3,name:"У стены — для осанки",ex:[
+  {name:"«Пять точек»",short:"Пять точек",start:"Стоя спиной к стене, пятки в 3–5 см от неё, стопы параллельно.",how:"Прижмись к стене затылком, лопатками и ягодицами, подтяни живот, подбородок слегка опусти. Отойди на шаг и сохрани эту осанку.",dose:"стоять 60 секунд, затем 5 раз отойти и вернуться",goal:"Правильная осанка.",
+   steps:[T(60,{label:"Стоим у стены"}),R("5 раз отойти и вернуться")]},
+  {name:"«Ангел на стене»",short:"Ангел на стене",start:"Спиной к стене, как в «Пяти точках»; руки согнуты в локтях под прямым углом, локти и тыльная сторона ладоней прижаты к стене.",how:"Медленно скользи руками вверх, не отрывая их и спину от стены, потом вниз.",dose:"12 раз, 3 подхода",goal:"Мышцы спины между лопатками, раскрытие грудной клетки.",
+   steps:sets(3,function(){return R("12 раз");})},
+  {name:"«Стульчик у стены»",short:"Стульчик",start:"Спиной к стене, стопы параллельно на ширине плеч в 30–40 см от стены, мяч зажат между коленями.",how:"Скользя спиной по стене, опустись до угла в коленях около 100–110°, задержись, поднимись. Колени смотрят вперёд, свод не проседает.",dose:"8–10 раз с задержкой 10 секунд",goal:"Мышцы бёдер и спины, правильная ось ноги под нагрузкой.",
+   steps:[H(10,10,5)]}
+ ]},
+ {n:4,name:"Заминка",ex:[
+  {name:"«Велосипед» лёжа",short:"Велосипед",start:"Лёжа на спине, ноги подняты, колени согнуты.",how:"«Крути педали» в спокойном темпе, носки тяни то от себя, то на себя.",dose:"45 секунд вперёд, 45 секунд назад",goal:"Мягкая работа голеностопа, кровообращение.",
+   steps:[T(45,{label:"Крутим вперёд"}),T(45,{label:"Крутим назад"})]},
+  {name:"Растяжка икры с полотенцем",short:"Растяжка с полотенцем",setWord:"Раз",start:"Сидя на полу, ноги прямые, полотенце накинуто на переднюю часть стопы.",how:"Тяни концы полотенца на себя до лёгкого натяжения в икре, без рывков.",dose:"30 секунд каждой ногой, 2 раза",goal:"Растяжка икроножной мышцы и ахиллова сухожилия.",
+   steps:sets(2,function(){return [T(30,{side:"L"}),T(30,{side:"R"})];},0)},
+  {name:"Растяжка у стены",short:"Растяжка у стены",setWord:"Раз",start:"Стоя лицом к стене, руки упираются в неё, одна нога шагнула назад.",how:"Задняя нога прямая, пятка прижата к полу, носок смотрит строго вперёд. Плавно подайся к стене.",dose:"30 секунд каждой ногой, 2 раза",goal:"Растяжка задней поверхности голени.",
+   steps:sets(2,function(){return [T(30,{side:"L",sideText:"Левая нога сзади"}),T(30,{side:"R",sideText:"Правая нога сзади"})];},0)},
+  {name:"«Тряпочки»",short:"Тряпочки",start:"Лёжа на спине, ноги подняты вверх (можно опереться о стену).",how:"Потряси расслабленными стопами и голенями, потом полежи, дыши медленно: вдох на 4 счёта, выдох на 6.",dose:"30 секунд встряхивания + 1 минута отдыха",goal:"Расслабление, отток крови от ног.",
+   steps:[T(30,{label:"Трясём стопами"}),BR(60,{label:"Дышим медленно"})]}
+ ]}
+];
+
+var EX=[];
+BLOCKS.forEach(function(b,bi){
+  var grp=null;
+  b.ex.forEach(function(e,j){
+    if(e.group) grp=e.group;
+    e.grp=grp; e.bi=bi; e.num=j+1; e.idx=EX.length;
+    if(!e.short) e.short=e.name.replace(/[«»]/g,"").split(" — ")[0];
+    EX.push(e);
+  });
+});
+
+/* ---------- Exercise animations (inline SVG, viewBox 0 0 240 120) ---------- */
+var AN=(function(){
+var PI=Math.PI;
+function r(d){return d*PI/180;}
+function dg(a){return a*180/PI;}
+function dv(a){return [Math.sin(r(a)),Math.cos(r(a))];} // angle from straight down, + toward +x
+function mv(p,v,l){return [p[0]+v[0]*l,p[1]+v[1]*l];}
+function f1(n){return String(Math.round(n*10)/10);}
+function ln(a,b,c,w){return '<line x1="'+f1(a[0])+'" y1="'+f1(a[1])+'" x2="'+f1(b[0])+'" y2="'+f1(b[1])+'" class="'+(c||"k")+'"'+(w?' stroke-width="'+w+'"':"")+'/>';}
+function pl(pts,c){return '<polyline points="'+pts.map(function(p){return f1(p[0])+","+f1(p[1]);}).join(" ")+'" class="'+(c||"k")+'"/>';}
+function ci(c,rr,cls){return '<circle cx="'+f1(c[0])+'" cy="'+f1(c[1])+'" r="'+f1(rr)+'" class="'+cls+'"/>';}
+function ease(p){return (1-Math.cos(2*PI*p))/2;}
+function sm(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);}
+function seg(p,a,b){return sm((p-a)/(b-a));}
+function lerp(a,b,t){return a+(b-a)*t;}
+function gl(y){return ln([0,y],[240,y],"fl");}
+function arrow(a,b){
+  var dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;
+  var h1=[b[0]-ux*6-uy*4,b[1]-uy*6+ux*4],h2=[b[0]-ux*6+uy*4,b[1]-uy*6-ux*4];
+  return ln(a,[b[0]-ux*3,b[1]-uy*3],"ac")+'<path d="M'+f1(b[0])+" "+f1(b[1])+"L"+f1(h1[0])+" "+f1(h1[1])+"L"+f1(h2[0])+" "+f1(h2[1])+'Z" class="acf"/>';
+}
+function arcA(cx,cy,R,a0,a1){
+  var p0=[cx+R*Math.cos(r(a0)),cy+R*Math.sin(r(a0))],p1=[cx+R*Math.cos(r(a1)),cy+R*Math.sin(r(a1))];
+  var sw=a1>a0?1:0,lg=Math.abs(a1-a0)>180?1:0;
+  var t=sw?[-Math.sin(r(a1)),Math.cos(r(a1))]:[Math.sin(r(a1)),-Math.cos(r(a1))],n=[-t[1],t[0]];
+  var tip=[p1[0]+t[0]*4,p1[1]+t[1]*4],b1=[p1[0]-t[0]*2+n[0]*4,p1[1]-t[1]*2+n[1]*4],b2=[p1[0]-t[0]*2-n[0]*4,p1[1]-t[1]*2-n[1]*4];
+  return '<path d="M'+f1(p0[0])+" "+f1(p0[1])+"A"+R+" "+R+" 0 "+lg+" "+sw+" "+f1(p1[0])+" "+f1(p1[1])+'" class="ac"/>'+
+         '<path d="M'+f1(tip[0])+" "+f1(tip[1])+"L"+f1(b1[0])+" "+f1(b1[1])+"L"+f1(b2[0])+" "+f1(b2[1])+'Z" class="acf"/>';
+}
+function ik(a,b,l1,l2,side){
+  var dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy);
+  var dd=Math.max(Math.abs(l1-l2)+0.01,Math.min(d,l1+l2-0.01));
+  var ang=Math.atan2(dy,dx),A=Math.acos((l1*l1+dd*dd-l2*l2)/(2*l1*dd)),t=ang+side*A;
+  var k=[a[0]+l1*Math.cos(t),a[1]+l1*Math.sin(t)],ex=b[0]-k[0],ey=b[1]-k[1],e=Math.hypot(ex,ey)||1;
+  return [k,[k[0]+ex/e*l2,k[1]+ey/e*l2]];
+}
+
+/* side-view stick figure, facing right */
+function legPts(hip,L){
+  var knee,ank;
+  if(L.to){var q=ik(hip,L.to,24,24,L.side||-1);knee=q[0];ank=q[1];}
+  else{knee=mv(hip,dv(L.th),24);ank=mv(knee,dv(L.th-(L.kn||0)),24);}
+  var s=dg(Math.atan2(ank[0]-knee[0],ank[1]-knee[1]));
+  var f=L.fa!==undefined?L.fa:(L.flat?90:s+90+(L.an||0));
+  var base=mv(ank,dv(s),2.5);
+  return {knee:knee,ank:ank,heel:mv(base,dv(f),-3),toe:mv(base,dv(f),9)};
+}
+function armPts(sh,A){
+  if(A.to){var q=ik(sh,A.to,17,15,A.side||1);return {el:q[0],hand:q[1]};}
+  var el=mv(sh,dv(A.sh),17);return {el:el,hand:mv(el,dv(A.sh+(A.el||0)),15)};
+}
+function fig(o){
+  var hip=o.hip,t=r(o.tor||0),up=[Math.sin(t),-Math.cos(t)],fs=o.far||[0,0];
+  var neck=mv(hip,up,33),head=mv(hip,up,42),sh=mv(hip,up,30);
+  var hipF=[hip[0]+fs[0],hip[1]+fs[1]],shF=[sh[0]+fs[0],sh[1]+fs[1]];
+  var legs=o.legs.map(function(L,i){return legPts(i?hipF:hip,L);});
+  var arms=(o.arms||[]).map(function(A,i){return armPts(i?shF:sh,A);});
+  function dl(g,h,c){return pl([h,g.knee,g.ank],c)+ln(g.heel,g.toe,c);}
+  function da(g,h,c){return pl([h,g.el,g.hand],c);}
+  var s="";
+  if(arms[1])s+=da(arms[1],shF,"kf");
+  if(legs[1])s+=dl(legs[1],hipF,"kf");
+  s+=ln(hip,neck)+ci(head,7.5,"hd")+dl(legs[0],hip,"k");
+  if(arms[0])s+=da(arms[0],sh,"k");
+  return {svg:s,legs:legs,arms:arms,head:head,sh:sh,hip:hip};
+}
+function grounded(build,fy){
+  var g=build(0),m=-1e9;
+  g.legs.forEach(function(L){m=Math.max(m,L.heel[1],L.toe[1]);});
+  return build(fy-m-2.5);
+}
+function walk(p,o){
+  var w=2*PI*p,amp=o.amp||20;
+  var g=grounded(function(hy){
+    var legs=[0,1].map(function(i){var ph=w+i*PI,th=amp*Math.sin(ph),c=Math.cos(ph);return {th:th,kn:(o.kn||24)*Math.max(0,c),an:o.an(th,c)};});
+    return fig({hip:[118,hy],tor:o.tor||2,far:[-2,-1],legs:legs,arms:o.arms(w)});
+  },110);
+  var d="";for(var k=0;k<14;k++){var x=((k*20-p*60)%280+280)%280-20;d+=ln([x,114],[x+8,114],"fl");}
+  return gl(110)+d+g.svg;
+}
+function chair(x,y){
+  return '<rect x="'+(x-16)+'" y="'+y+'" width="32" height="4" rx="2" class="prf"/>'+ln([x-13,y+4],[x-13,112],"pr")+ln([x+13,y+4],[x+13,112],"pr")+ln([x-15,y+2],[x-15,y-34],"pr");
+}
+function seated(an,extra){
+  var x=96,sy=86,hip=[x+2,sy-3];
+  var g=fig({hip:hip,tor:-2,far:[-3,-1],legs:[{th:61,kn:0,an:an},{th:61,kn:0,an:an}],arms:[{to:[x+16,sy+4]},{to:[x+14,sy+4]}]});
+  return chair(x,sy)+gl(112)+(extra||"")+g.svg;
+}
+
+/* front-view figure */
+function figF(o){
+  var hx=o.x,hy=o.y,s="",i,hips=[[hx-6,hy],[hx+6,hy]],neck=[hx,hy-34],head=[hx,hy-43],shs=[[hx-11,hy-29],[hx+11,hy-29]];
+  for(i=0;i<2;i++){
+    var L=o.legs[i],hp=hips[i],sd=i?1:-1,knee,ank;
+    if(L.lift){var fl=24*Math.cos(r(80*L.lift));knee=[hp[0]+sd*3*L.lift,hp[1]+fl];ank=[knee[0]+sd*2,knee[1]+23];}
+    else{ank=L.ank;knee=[(hp[0]+ank[0])/2+sd*1.5,(hp[1]+ank[1])/2];}
+    s+=pl([hp,knee,ank],"k")+ln([ank[0]-sd*1.5,ank[1]+3],[ank[0]+sd*6,ank[1]+3],"k");
+    if(L.lift>0.3)s+=ci(knee,3.4,"hd");
+  }
+  s+=ln(hips[0],hips[1])+ln([hx,hy],neck)+ln(shs[0],shs[1])+ci(head,7.5,"hd");
+  for(i=0;i<2;i++){
+    var A=o.arms[i],sd2=i?1:-1,sh=shs[i];
+    var el=[sh[0]+sd2*15*Math.sin(r(A.a1)),sh[1]+15*Math.cos(r(A.a1))];
+    var hd=[el[0]+sd2*14*Math.sin(r(A.a2)),el[1]+14*Math.cos(r(A.a2))];
+    s+=pl([sh,el,hd],"k");
+  }
+  if(o.rot)s='<g transform="rotate('+f1(o.rot)+" "+f1(o.rx)+" "+f1(o.ry)+')">'+s+"</g>";
+  if(o.sc)s='<g transform="translate('+f1(hx)+' 110) scale('+o.sc+") translate("+f1(-hx)+' -110)">'+s+"</g>";
+  return s;
+}
+
+/* close-up foot, side view, facing right; heel contact at (x,y) */
+function footSide(x,y,o){
+  o=o||{};
+  var sc=o.sc||1.6,s=o.s||0,arch=o.arch||0,cu=o.curl||0,SL=o.shin||44;
+  var Lf=40-7*s,bx=Lf-11,bl=4*cu,ah=3+6*arch+2.5*s,tip=bx+11-4*cu;
+  var d="M0 0Q"+f1(0.45*bx)+" "+f1(-2*ah)+" "+f1(bx)+" "+f1(-bl)+
+        "Q"+f1(bx+6)+" "+f1(-bl*0.4)+" "+f1(tip)+" 0"+
+        "Q"+f1(tip+2.5)+" -2.5 "+f1(tip-1)+" -5"+
+        "Q"+f1(bx+5)+" "+f1(-7.5-2*cu)+" "+f1(bx)+" "+f1(-8-bl)+
+        "Q"+f1(0.55*bx)+" "+f1(-15-3*s-2*arch)+" 11 -21"+
+        "L1 -21C-3 -16 -5 -5 0 0Z";
+  var g='<g transform="translate('+f1(x)+" "+f1(y)+") rotate("+f1(o.rot||0)+") scale("+sc+')">';
+  g+='<path d="'+d+'" class="ft"/>';
+  g+='<path d="M'+f1(bx+0.5)+" "+f1(-bl-0.5)+"Q"+f1(bx+2)+" "+f1(-4-bl)+" "+f1(bx+0.5)+" "+f1(-7.5-bl)+'" class="ftd"/>';
+  g+='<g transform="rotate('+f1(o.ka||0)+' 6 -21)"><rect x="1" y="'+(-SL)+'" width="10" height="'+(SL-17)+'" class="ftn"/><path d="M1 -18V'+(-SL)+"M11 -18V"+(-SL)+'" class="ft"/></g>';
+  return g+"</g>";
+}
+function footLen(o){return (40-7*((o&&o.s)||0))*((o&&o.sc)||1.6);}
+
+/* foot seen from above (or sole from below); heel at origin, toes up */
+var FT="M-7 -3C-9 -14 -10.5 -29 -9.5 -36C-8.5 -43 7.5 -45 9 -38.5C10.5 -31 6.5 -23 6 -14C5.6 -5 4.5 1.5 0 1.5C-4.5 1.5 -6.3 0 -7 -3Z";
+var TOES=[[6.2,-45,3.4],[1.4,-47.4,2.4],[-2.6,-46.6,2.2],[-6,-44.6,2],[-8.8,-41.6,1.8]];
+function footTop(x,y,o){
+  o=o||{};var sc=o.sc||1,c=o.cls||"ft";
+  var s='<g transform="translate('+f1(x)+" "+f1(y)+") rotate("+f1(o.rot||0)+") scale("+f1((o.mir?-1:1)*sc*(o.sx||1))+" "+f1(sc*(o.sy||1))+')"><path d="'+FT+'" class="'+c+'"/>';
+  TOES.forEach(function(t){s+='<circle cx="'+t[0]+'" cy="'+t[1]+'" r="'+t[2]+'" class="'+c+'"/>';});
+  return s+(o.extra||"")+"</g>";
+}
+function rotP(p,c,deg){var a=r(deg),dx=p[0]-c[0],dy=p[1]-c[1];return [c[0]+dx*Math.cos(a)-dy*Math.sin(a),c[1]+dx*Math.sin(a)+dy*Math.cos(a)];}
+
+/* lower legs seen from behind */
+function legBack(cx,sd,o){
+  var h=o.lift||0,t=(o.tilt||0)*(sd<0?-1:1),px=cx+sd*7;
+  var leg="M"+(cx-9)+" 2C"+(cx-14)+" 28 "+(cx-13)+" 52 "+(cx-6)+" 76L"+(cx-6)+" 89Q"+(cx-8)+" 100 "+cx+" 100Q"+(cx+8)+" 100 "+(cx+6)+" 89L"+(cx+6)+" 76C"+(cx+13)+" 52 "+(cx+14)+" 28 "+(cx+9)+" 2";
+  var s='<g transform="rotate('+f1(t)+" "+px+' 101)">';
+  if(h>0.5)s+='<path d="M'+(cx-6)+" "+f1(100-h)+"L"+(cx-8)+" 102L"+(cx+8)+" 102L"+(cx+6)+" "+f1(100-h)+'Z" class="sole"/>';
+  s+='<g transform="translate(0 '+f1(-h)+')"><path d="'+leg+'" class="ft"/><path d="M'+cx+' 60V90" class="ftd"/>';
+  if(o.axis)s+=ln([cx,6],[cx,99],"dsa");
+  return s+"</g></g>";
+}
+
+var A={};
+
+/* ---- Блок 1 ---- */
+A.circles={T:3,f:function(p){
+  var hip=[98,83],th=2*PI*p,Lp=legPts(hip,{th:61,kn:0}),base=mv(Lp.ank,dv(61),2.5);
+  var c=mv(base,dv(138),8.5),tg=[c[0]+5*Math.cos(th),c[1]+8*Math.sin(th)];
+  var fa=dg(Math.atan2(tg[0]-base[0],tg[1]-base[1]));
+  var g=fig({hip:hip,tor:-2,far:[-3,-1],legs:[{th:61,kn:0,fa:fa},{th:61,kn:0,fa:fa}],arms:[{to:[112,90]},{to:[110,90]}]});
+  return chair(96,86)+gl(112)+'<ellipse cx="'+f1(c[0])+'" cy="'+f1(c[1])+'" rx="6.5" ry="9.5" class="dsa"/>'+g.svg+ci(tg,2.8,"acf");
+}};
+A.noski={T:2.6,f:function(p){
+  var u=ease(p);
+  return seated(lerp(16,-48,u),arcA(146,92,16,u<0.5?-40:20,u<0.5?20:-40));
+}};
+A.soldier={T:1.2,f:function(p){return walk(p,{kn:22,an:function(){return -58;},arms:function(){return [{sh:-25,el:64},{sh:-25,el:64}];}});}};
+A.penguin={T:1.3,f:function(p){return walk(p,{amp:12,kn:12,an:function(){return 30;},arms:function(){return [{sh:-30,el:-8},{sh:-30,el:-8}];}});}};
+A.bear={T:1.6,f:function(p){
+  var w=2*PI*p;
+  return gl(102)+legBack(102,-1,{tilt:13,lift:8*Math.max(0,Math.sin(w))})+legBack(138,1,{tilt:13,lift:8*Math.max(0,-Math.sin(w))});
+}};
+A.rollwalk={T:1.3,f:function(p){return walk(p,{an:function(th,c){var w=sm((0.3-c)/0.6);return w*th*1.1+(1-w)*6;},arms:function(w){return [{sh:-14*Math.sin(w),el:14},{sh:14*Math.sin(w),el:14}];}});}};
+
+/* ---- Блок 2: лёжа ---- */
+A.ladoshki={T:3,f:function(p){
+  var u=ease(p),s="",sc=1.5;
+  [[-1,90],[1,150]].forEach(function(d){
+    var sd=d[0],x=d[1],mir=sd>0,sx=1-0.55*u,sy=1-0.1*u,cx=x-sd*5*u;
+    s+=footTop(x,108,{sc:sc,mir:mir,cls:"gh"});
+    s+=footTop(cx+sd*11*u,108,{sc:sc,mir:mir,sx:sx*0.9,sy:sy,cls:"sd"});
+    s+=footTop(cx,108,{sc:sc,mir:mir,sx:sx,sy:sy});
+  });
+  return s+arcA(90,24,14,205,325)+arcA(150,24,14,335,215);
+}};
+A.claps={T:1.6,f:function(p){
+  var u=sm(Math.min(1,ease(p)*1.3)),s=gl(106);
+  [-1,1].forEach(function(sd){
+    var hp=[120+sd*12,64],knee=[120+sd*56,28],ank=[lerp(120+sd*28,120+sd*10,u),lerp(96,74,u)];
+    var ang=lerp(0,90,u)*(sd<0?-1:1);
+    s+=ln(hp,knee,"kf")+ln(knee,ank,"k")+ci(knee,4,"hd");
+    s+='<g transform="rotate('+f1(ang)+" "+f1(ank[0])+" "+f1(ank[1])+')"><rect x="'+f1(ank[0]-7)+'" y="'+f1(ank[1]+1)+'" width="14" height="6" rx="3" class="ft"/>'+ln([ank[0]-6,ank[1]+7],[ank[0]+6,ank[1]+7],"ac")+"</g>";
+  });
+  if(u>0.9)s+=ln([120,62],[120,56],"ac")+ln([113,64],[109,59],"ac")+ln([127,64],[131,59],"ac");
+  return s;
+}};
+A.wipers={T:2.4,f:function(p){
+  var a=12*ease(p);
+  return footTop(98,110,{sc:1.35,cls:"gh"})+footTop(142,110,{sc:1.35,mir:1,cls:"gh"})+
+         footTop(98,110,{sc:1.35,rot:a})+footTop(142,110,{sc:1.35,mir:1,rot:-a})+
+         ci([98,110],2.6,"acf")+ci([142,110],2.6,"acf")+arcA(98,110,76,253,268)+arcA(142,110,76,287,272);
+}};
+
+/* ---- Блок 2: сидя ---- */
+A.caterpillar={T:7,f:function(p){
+  var q=p*6,k=Math.min(5,Math.floor(q)),sub=q-k,h,s;
+  function st(t){if(t<0.5){var a=sm(t/0.5);return {h:7*a,s:a};}return {h:7,s:1-sm((t-0.5)/0.5)};}
+  if(k<3){var a=st(sub);h=k*7+a.h;s=a.s;}else{var b=st(1-sub);h=(5-k)*7+b.h;s=b.s;}
+  var x=34+h*1.6,m="";
+  for(var i=0;i<9;i++)m+=ln([30+i*22,109],[30+i*22,113],"fl");
+  return gl(106)+m+footSide(x,105,{sc:1.6,s:s,curl:s*0.9,shin:48})+(k<3?arrow([168,24],[198,24]):arrow([198,24],[168,24]));
+}};
+A.towel={T:6,f:function(p){
+  var q=p*4,k=Math.min(3,Math.floor(q)),sub=q-k,cu=ease(sub);
+  var pulled=(k+sm(Math.min(1,sub/0.5)))*8,E=212-pulled,hx=40,s=gl(108);
+  var amp=1.5+pulled/10,bunch="M"+(hx-6)+" 106";
+  for(var x=hx-6;x<=hx+46;x+=2)bunch+="L"+x+" "+f1(106-Math.abs(Math.sin((x-hx)/52*PI*(2+k)))*amp);
+  s+='<path d="'+bunch+"L"+f1(hx+64)+" 106L"+f1(E)+' 106" class="twl"/>';
+  s+='<rect x="'+f1(E-2)+'" y="82" width="12" height="22" rx="3" class="prf"/><rect x="'+f1(E+1.5)+'" y="76" width="5" height="7" rx="1" class="prf"/>';
+  s+=footSide(hx,104,{sc:1.6,curl:cu,shin:48});
+  return s+arrow([E-14,96],[E-34,96]);
+}};
+A.cleanup={T:4,f:function(p){
+  var home=[128,114],item=[192,114],box=[46,114],tipOff=[-2,-64];
+  var hpos,carry=false,dropT=0;
+  if(p<0.2)hpos=[lerp(home[0],item[0],sm(p/0.2)),home[1]];
+  else if(p<0.3)hpos=item;
+  else if(p<0.6){hpos=[lerp(item[0],box[0],sm((p-0.3)/0.3)),item[1]];carry=true;}
+  else if(p<0.7){hpos=box;dropT=(p-0.6)/0.1;}
+  else hpos=[lerp(box[0],home[0],sm((p-0.7)/0.3)),box[1]];
+  var tip=[hpos[0]+tipOff[0],hpos[1]+tipOff[1]],s="";
+  s+='<path d="M24 38V76H68V38" class="pr"/><rect x="24" y="64" width="44" height="12" class="prf"/>'+ci([36,70],3,"ball")+ci([48,71],3,"ball");
+  s+='<rect x="200" y="78" width="6" height="6" rx="1.5" class="ball"/>'+ci([170,92],3,"ball");
+  if(p>=0.2&&p<0.3)s+=ci(tip,6,"dsa");
+  if(p<0.2||p>0.92)s+=ci([item[0]-2,item[1]-64],3.4,"ball");
+  s+=footTop(hpos[0],hpos[1],{sc:1.3,mir:1});
+  if(carry||(p>=0.2&&p<0.3))s+=ci([tip[0],tip[1]+1],3.4,"ball");
+  if(dropT)s+=ci([box[0]-2,lerp(tip[1],68,sm(dropT))],3.4,"ball");
+  return s;
+}};
+A.rollpin={T:3,f:function(p){
+  var u=ease(p),R=8,cx=124,fy=110,hx=cx-46+32*u,rot=(hx-(cx-46))/R;
+  var e=[cx+R*Math.cos(rot),fy-R+R*Math.sin(rot)];
+  return gl(fy)+'<rect x="'+(cx-3)+'" y="'+(fy-2*R)+'" width="6" height="'+(2*R)+'" class="sole"/>'+ci([cx,fy-R],R,"prf")+ln([cx,fy-R],e,"pr")+
+         footSide(hx,fy-2*R,{sc:1.5,shin:44})+arrow([60,20],[84,20])+arrow([84,20],[60,20]);
+}};
+A.hedgehog={T:5,f:function(p){
+  var R=11,cx=126,fy=110,hx,lift=0,cu=0,bx=cx,by=fy-R;
+  if(p<0.55){var u=ease(p/0.55);hx=cx-40+20*u;}
+  else{var t=(p-0.55)/0.45;hx=cx-40-6*sm(t/0.15);cu=sm((t-0.1)/0.2)*(1-sm((t-0.85)/0.15));lift=12*seg(t,0.25,0.45)*(1-seg(t,0.65,0.85));bx=hx+40;by=fy-R-lift;}
+  var rot=(hx)/R,sp="";
+  for(var i=0;i<12;i++){var a=rot+i*PI/6;sp+=ln([bx+R*Math.cos(a),by+R*Math.sin(a)],[bx+(R+3)*Math.cos(a),by+(R+3)*Math.sin(a)],"pr");}
+  return gl(fy)+sp+ci([bx,by],R,"ball")+footSide(hx,fy-2*R-lift,{sc:1.5,curl:cu,shin:42});
+}};
+A.artist={T:6,f:function(p){
+  var path=[[140,50],[176,50],[176,28],[158,12],[140,28],[140,50]],segs=[],tot=0,i;
+  for(i=1;i<path.length;i++){var l=Math.hypot(path[i][0]-path[i-1][0],path[i][1]-path[i-1][1]);segs.push(l);tot+=l;}
+  var q=Math.min(1,p/0.82)*tot,drawn=[path[0]],tipP=path[0];
+  for(i=1;i<path.length;i++){
+    if(q>=segs[i-1]){drawn.push(path[i]);q-=segs[i-1];tipP=path[i];}
+    else{var t=q/segs[i-1];tipP=[lerp(path[i-1][0],path[i][0],t),lerp(path[i-1][1],path[i][1],t)];drawn.push(tipP);break;}
+  }
+  var sc=1.1,off=[-3.8*sc,-64*sc],heel=[tipP[0]-off[0],tipP[1]-off[1]];
+  var pen0=[heel[0]-3.6*sc,heel[1]-47*sc];
+  return '<rect x="126" y="4" width="64" height="58" rx="2" class="pap"/>'+pl(drawn,"ac")+footTop(heel[0],heel[1],{sc:sc,mir:1})+ln(pen0,tipP,"pr",3)+ci(tipP,2,"acf");
+}};
+
+/* ---- Блок 2: стоя ---- */
+A.shortfoot={T:4,f:function(p){
+  var u=sm(Math.min(1,ease(p)*1.3)),o={sc:1.75,arch:u,s:0.35*u,shin:46},x=58;
+  var ax=x+0.45*(40-7*o.s-11)*o.sc;
+  return gl(106)+footSide(x,105,o)+'<g opacity="'+f1(u)+'">'+arrow([ax,104],[ax,104-10-11*u])+"</g>"+ln([x+footLen(o)-24,110],[x+footLen(o)+4,110],"dsh");
+}};
+A.raise={T:2.6,f:function(p){
+  var h=13*ease(p);
+  return gl(102)+legBack(103,-1,{lift:h,axis:1})+legBack(137,1,{lift:h,axis:1})+ci([120,82-h],10,"ball");
+}};
+A.rollouts={T:2.8,f:function(p){
+  var t=16*ease(p);
+  return gl(102)+legBack(100,-1,{tilt:t})+legBack(140,1,{tilt:t})+arcA(100,96,22,250,200)+arcA(140,96,22,290,340);
+}};
+A.tightrope={T:8,f:function(p){
+  var q=p*8,k=Math.min(7,Math.floor(q)),sub=q-k,dir=k<4?-1:1,j=k<4?k:k-4;
+  var c=k<4?152-14*j:96+14*j,lead=dir<0?0:1;
+  var a=sm(Math.min(1,sub/0.5)),b=sm(Math.max(0,(sub-0.5)/0.5));
+  var feet=[c-6,c+6],lift=[0,0];
+  feet[lead]+=dir*14*a;feet[1-lead]+=dir*14*b;
+  lift[lead]=7*Math.sin(PI*a);lift[1-lead]=7*Math.sin(PI*b);
+  var hx=(feet[0]+feet[1])/2,ay=98.5;
+  return gl(110)+'<rect x="34" y="102" width="172" height="7" rx="3.5" class="prf"/>'+
+    figF({x:hx,y:ay-48,legs:[{ank:[feet[0],ay-lift[0]]},{ank:[feet[1],ay-lift[1]]}],arms:[{a1:72,a2:80},{a1:72,a2:80}]})+
+    (dir<0?arrow([60,16],[36,16]):arrow([180,16],[204,16]));
+}};
+A.heron={T:3.2,f:function(p){
+  var rot=2.5*Math.sin(2*PI*p);
+  return gl(110)+figF({x:120,y:57,legs:[{ank:[114,105]},{lift:1}],arms:[{a1:88,a2:92},{a1:88,a2:92}],rot:rot,rx:114,ry:108});
+}};
+
+/* ---- Блок 3 ---- */
+A.fivepoints={T:6,f:function(p){
+  var away=26*(seg(p,0.5,0.62)-seg(p,0.85,0.97));
+  var mv1=p>0.5&&p<0.62,mv2=p>0.85&&p<0.97,ph=mv1?(p-0.5)/0.12:mv2?(p-0.85)/0.12:0;
+  var sw=(mv1||mv2)?12*Math.sin(PI*ph):0;
+  var g=grounded(function(hy){return fig({hip:[64+away,hy],tor:0,far:[-1,0],legs:[{th:sw,kn:0,flat:1},{th:-sw,kn:0,flat:1}],arms:[{sh:5,el:0},{sh:5,el:0}]});},110);
+  var s='<rect x="40" y="0" width="16" height="110" class="wall"/>'+ln([56,0],[56,110],"pr")+gl(110)+g.svg;
+  if(away<1){
+    var pu=2.6+1*Math.sin(2*PI*p*4);
+    [g.head[1],g.sh[1]+8,g.hip[1]].forEach(function(y){s+=ci([57.5,y],pu,"acf");});
+  }
+  return s;
+}};
+A.angel={T:4,f:function(p){
+  var u=ease(p),a1=lerp(92,158,u),a2=lerp(180,172,u);
+  return '<rect x="44" y="0" width="152" height="110" class="wall"/>'+gl(110)+
+    figF({x:120,y:57,sc:0.86,legs:[{ank:[113,105]},{ank:[127,105]}],arms:[{a1:a1,a2:a2},{a1:a1,a2:a2}]});
+}};
+A.wallsit={T:5,f:function(p){
+  var u=seg(p,0.08,0.38)-seg(p,0.72,0.96),hip=[64,lerp(68,86,u)];
+  var g=fig({hip:hip,tor:0,far:[-2,0],legs:[{to:[97,104.5],side:-1,flat:1},{to:[95,104.5],side:-1,flat:1}],arms:[{sh:6,el:4},{sh:6,el:4}]});
+  var kn=g.legs[0].knee;
+  return '<rect x="40" y="0" width="16" height="110" class="wall"/>'+ln([56,0],[56,110],"pr")+gl(110)+g.svg+ci([kn[0]+4,kn[1]-1],4.5,"ball");
+}};
+
+/* ---- Блок 4 ---- */
+A.bike={T:2,f:function(p){
+  var hip=[126,103],th=-2*PI*p,c=[hip[0]+14,hip[1]-42],R=10;
+  var legs=[0,1].map(function(i){var a=th+i*PI;return {to:[c[0]+R*Math.cos(a),c[1]+R*Math.sin(a)],side:-1,an:18*Math.sin(a)};});
+  var g=fig({hip:hip,tor:-90,legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
+  return gl(109)+ci(c,R+5,"dsh")+g.svg;
+}};
+A.stowel={T:4,f:function(p){
+  var u=ease(p),hip=[66,104],an=lerp(0,20,u),hand=[lerp(101,96,u),lerp(80,78,u)];
+  var g=fig({hip:hip,tor:lerp(8,-3,u),far:[-2,-1],legs:[{th:90,kn:0,an:an},{th:90,kn:0,an:an}],arms:[{to:hand,side:1},{to:[hand[0]-2,hand[1]],side:1}]});
+  var L=g.legs[0],fd=[L.toe[0]-L.heel[0],L.toe[1]-L.heel[1]],fl=Math.hypot(fd[0],fd[1]);fd=[fd[0]/fl,fd[1]/fl];
+  var nrm=[-fd[1],fd[0]];
+  var t1=[L.toe[0]+nrm[0]*3,L.toe[1]+nrm[1]*3],t2=[L.heel[0]+fd[0]*7+nrm[0]*3,L.heel[1]+fd[1]*7+nrm[1]*3];
+  var hd=g.arms[0].hand;
+  return gl(110)+g.svg+'<path d="M'+f1(hd[0])+" "+f1(hd[1])+"L"+f1(t1[0])+" "+f1(t1[1])+"L"+f1(t2[0])+" "+f1(t2[1])+"L"+f1(hd[0]+1)+" "+f1(hd[1]+2)+'" class="twl"/>';
+}};
+A.swall={T:4,f:function(p){
+  var u=ease(p),hx=lerp(116,124,u),bk=[90,104.5],d=hx-bk[0];
+  var hy=bk[1]-Math.sqrt(Math.max(0,47.6*47.6-d*d)),tor=dg(Math.atan2(d,bk[1]-hy));
+  var g=fig({hip:[hx,hy],tor:tor,far:[1,0],legs:[{to:bk,side:-1,flat:1},{to:[146,104.5],side:-1,flat:1}],arms:[{to:[163,50],side:1},{to:[162,52],side:1}]});
+  return '<rect x="165" y="0" width="16" height="110" class="wall"/>'+ln([165,0],[165,110],"pr")+gl(110)+g.svg+arrow([84,84],[84,100]);
+}};
+A.rags={T:4,f:function(p){
+  var shake=p<0.55,w=2*PI*p*14,j=shake?1:0;
+  var legs=[{th:180+j*4*Math.sin(w),kn:j*(6+5*Math.sin(w*1.3)),an:j*28*Math.sin(w+1)},{th:178-j*4*Math.sin(w+0.7),kn:j*(6+5*Math.sin(w*1.1+1)),an:j*28*Math.sin(w+2)}];
+  var g=fig({hip:[124,103],tor:-90,far:[2,0],legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
+  var s=gl(109)+g.svg;
+  if(shake)s+=ln([140,50],[146,48],"ac")+ln([140,58],[147,58],"ac")+ln([106,50],[100,48],"ac")+ln([106,58],[99,58],"ac");
+  else s+='<circle cx="104" cy="96" r="'+f1(3+3*ease((p-0.55)/0.45*2%1))+'" class="dsa"/>';
+  return s;
+}};
+
+return A;
+})();
+
+var ANIM_KEYS=["circles","noski","soldier","penguin","bear","rollwalk","ladoshki","claps","wipers","caterpillar","towel","cleanup","rollpin","hedgehog","artist","shortfoot","raise","rollouts","tightrope","heron","fivepoints","angel","wallsit","bike","stowel","swall","rags"];
+EX.forEach(function(e,i){e.anim=ANIM_KEYS[i];});
+
+/* ---------- Helpers ---------- */
+var $=function(id){return document.getElementById(id);};
+var store={
+  get:function(k,d){try{var v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+function pad(n){return String(n).padStart(2,"0");}
+function dkey(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function today(){return dkey(new Date());}
+function plural(n,f){var a=Math.abs(n)%100,b=a%10;if(a>10&&a<20)return f[2];if(b>1&&b<5)return f[1];if(b===1)return f[0];return f[2];}
+function fmt(s){return s>=60?Math.floor(s/60)+":"+pad(s%60):String(s);}
+function now(){return performance.now();}
+
+function stepSec(s){
+  switch(s.k){
+    case "time": return s.sec+3;
+    case "hold": return 3+s.reps*(s.hold+s.relax)-s.relax;
+    case "rest": case "breath": return s.sec;
+    case "reps": var n=parseInt(s.text,10); return n?Math.max(15,n*2):90;
+  }
+  return 0;
+}
+function exSec(e){return e.steps.reduce(function(a,s){return a+stepSec(s);},0)+15;}
+
+var FOOT='<svg viewBox="0 0 20 28" fill="currentColor" aria-hidden="true"><g%T%><path d="M5.2 14.2c0-3.3 2.1-5.3 5.1-5.3s5 2.2 4.6 6.1c-.3 3-1.3 4.2-1.3 7.1 0 3.1-1.7 5.2-4 5.2s-3.8-2.1-3.8-5c0-3.1-.6-4.8-.6-8.1z"/><circle cx="14.4" cy="5.6" r="2.3"/><circle cx="11.1" cy="3.9" r="1.6"/><circle cx="8.4" cy="3.8" r="1.4"/><circle cx="6.1" cy="4.8" r="1.2"/><circle cx="4.3" cy="6.6" r="1.05"/></g></svg>';
+function footSvg(side){return FOOT.replace("%T%",side==="R"?' transform="translate(20 0) scale(-1 1)"':"");}
+var ICON_VOL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4.5 4.5 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>';
+var ICON_MUTE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+var CHEV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+
+/* ---------- Settings, sound, voice, screen ---------- */
+var SET=Object.assign({beep:true,voice:true},store.get("ss_set",{}));
+var AC=null;
+function unlock(){
+  try{
+    if(!AC){var C=window.AudioContext||window.webkitAudioContext;if(C)AC=new C();}
+    if(AC&&AC.state==="suspended")AC.resume();
+  }catch(e){}
+}
+function beep(f,d,v,delay){
+  if(!AC||!SET.beep||S.muted)return;
+  try{
+    var t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();
+    o.type="sine";o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(v||0.2,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+0.03);
+  }catch(e){}
+}
+function tone(k){
+  switch(k){
+    case "tick": beep(880,.07,.14);break;
+    case "ready": beep(660,.1,.14);break;
+    case "go": beep(1320,.2,.22);break;
+    case "soft": beep(587,.18,.16);break;
+    case "end": beep(988,.12,.2);beep(1318,.18,.2,.14);break;
+    case "done": beep(784,.12,.2);beep(988,.12,.2,.13);beep(1318,.28,.22,.26);break;
+  }
+}
+function vibrate(p){try{if(SET.beep&&!S.muted&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+
+var ruVoice=null,voicesKnown=false;
+function loadVoices(){
+  try{
+    var vs=window.speechSynthesis.getVoices();
+    if(vs&&vs.length){voicesKnown=true;ruVoice=vs.find(function(v){return /^ru/i.test(v.lang);})||null;}
+    $("voice-note").hidden=!(voicesKnown&&!ruVoice&&SET.voice);
+  }catch(e){}
+}
+var canSpeak=("speechSynthesis" in window)&&("SpeechSynthesisUtterance" in window);
+if(canSpeak){loadVoices();try{window.speechSynthesis.addEventListener("voiceschanged",loadVoices);}catch(e){}}
+function say(t){
+  if(!canSpeak||!SET.voice||S.muted||!t)return;
+  if(voicesKnown&&!ruVoice)return;
+  try{
+    var ss=window.speechSynthesis;
+    if(ss.speaking||ss.pending)ss.cancel();
+    var u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=1.05;
+    ss.speak(u);
+  }catch(e){}
+}
+function hush(){try{if(canSpeak)window.speechSynthesis.cancel();}catch(e){}}
+
+var WL=null;
+function wake(on){
+  try{
+    if(on){
+      if(!WL&&navigator.wakeLock){
+        navigator.wakeLock.request("screen").then(function(w){WL=w;w.addEventListener("release",function(){WL=null;});}).catch(function(){WL=null;});
+      }
+    }else if(WL){var w=WL;WL=null;w.release().catch(function(){});}
+  }catch(e){WL=null;}
+}
+
+/* ---------- Engine ---------- */
+var S={view:"home",ex:0,st:0,phase:"idle",segs:[],si:0,segEnd:0,remain:0,startedAt:0,muted:false,lastBeep:-1,drawnKey:""};
+function ex(){return EX[S.ex];}
+function step(){return ex().steps[S.st];}
+function prevReal(){var s=ex().steps;for(var j=S.st-1;j>=0;j--){if(s[j].k!=="rest")return s[j];}return null;}
+function sideWord(st){return st.sideText||(st.side==="L"?"Левая нога":"Правая нога");}
+
+function compile(st){
+  var prev=prevReal(),segs=[];
+  var prepMs=(st.side&&prev&&prev.side&&prev.side!==st.side)?5000:3000;
+  if(st.k==="time"){segs.push({p:"prep",ms:prepMs},{p:"work",ms:st.sec*1000});}
+  else if(st.k==="hold"){
+    segs.push({p:"prep",ms:prepMs});
+    for(var r=1;r<=st.reps;r++){segs.push({p:"hold",ms:st.hold*1000,rep:r});if(r<st.reps)segs.push({p:"relax",ms:st.relax*1000,rep:r});}
+  }
+  else if(st.k==="rest"){segs.push({p:"rest",ms:st.sec*1000});}
+  else if(st.k==="breath"){segs.push({p:"breath",ms:st.sec*1000});}
+  return segs;
+}
+
+function settle(){ // привести текущий шаг в состояние ожидания
+  S.segs=[];S.si=0;
+  S.phase=step().k==="reps"?"manual":"idle";
+}
+
+function runStep(){
+  var st=step();
+  if(st.k==="reps"){
+    S.phase="manual";
+    tone("end");
+    var pre=st.sets>1?(ex().setWord||"Подход")+" "+st.set+". ":"";
+    say(pre+(st.side?sideWord(st)+". ":"")+st.text);
+    render();return;
+  }
+  S.segs=compile(st);S.si=0;S.phase="run";
+  startSeg();render();
+}
+
+function startSeg(){
+  var seg=S.segs[S.si],st=step();
+  S.segEnd=now()+seg.ms;S.lastBeep=-1;
+  switch(seg.p){
+    case "prep":
+      tone("ready");
+      if(st.side&&prevReal()&&prevReal().side&&prevReal().side!==st.side) say("Смени ногу. "+sideWord(st));
+      else if(st.side) say(sideWord(st));
+      else say(st.label||"Приготовься");
+      break;
+    case "work": tone("go");say("Начали");break;
+    case "hold": tone("go");say(String(seg.rep));break;
+    case "relax": tone("soft");say("Расслабь");break;
+    case "rest": tone("soft");say("Отдых");break;
+    case "breath": tone("soft");say("Отдыхаем. Вдох на четыре, выдох на шесть");break;
+  }
+}
+
+function tickWanted(seg,sec){
+  if(seg.p==="prep")return sec<=2;
+  if(seg.p==="breath")return false;
+  return seg.ms>=6000;
+}
+
+function tick(){
+  if(S.phase!=="run")return;
+  var t=now(),guard=0;
+  while(S.phase==="run"&&t>=S.segEnd&&guard++<60){endSeg();}
+  if(S.phase!=="run")return;
+  var seg=S.segs[S.si],sec=Math.ceil((S.segEnd-t)/1000);
+  if(sec>=1&&sec<=3&&sec!==S.lastBeep){
+    if(tickWanted(seg,sec))tone("tick");
+    S.lastBeep=sec;
+  }
+  drawDial();
+}
+
+function endSeg(){
+  if(S.si+1<S.segs.length){S.si++;startSeg();render();}
+  else stepDone();
+}
+
+function stepDone(){
+  if(S.st+1<ex().steps.length){S.st++;runStep();}
+  else exDone();
+}
+
+function exDone(){
+  tone("done");vibrate([180,90,180]);
+  var finished=ex();
+  if(S.ex+1<EX.length){
+    S.ex++;S.st=0;settle();saveProgress();
+    toast("«"+finished.short+"» — готово");
+    say("Готово. Дальше: "+ex().short);
+    render();
+  }else finish();
+}
+
+function finish(){
+  S.phase="idle";wake(false);
+  var h=store.get("ss_hist",[]);if(h.indexOf(today())<0){h.push(today());store.set("ss_hist",h);}
+  store.set("ss_progress",null);
+  var mins=S.startedAt?Math.max(1,Math.round((Date.now()-S.startedAt)/60000)):0;
+  $("d-time").textContent=mins;$("d-time").nextElementSibling.textContent=plural(mins,["минута","минуты","минут"]);
+  var st=streak();$("d-streak").textContent=st;$("d-streak-w").textContent=plural(st,["день","дня","дней"])+" подряд";
+  say("Тренировка закончена. Молодец!");
+  show("done");
+}
+
+function advance(){ // перейти к следующему шагу без автозапуска
+  var steps=ex().steps;
+  if(S.st+1<steps.length){S.st++;while(step().k==="rest"&&S.st+1<steps.length)S.st++;}
+  else if(S.ex+1<EX.length){S.ex++;S.st=0;}
+  else{finish();return;}
+  hush();settle();saveProgress();render();
+}
+function back(){
+  if(S.st>0){S.st--;while(S.st>0&&step().k==="rest")S.st--;}
+  else if(S.ex>0){S.ex--;S.st=0;}
+  hush();settle();render();
+}
+
+function mainAction(){
+  unlock();
+  switch(S.phase){
+    case "idle": if(!S.startedAt)S.startedAt=Date.now(); wake(true); runStep(); break;
+    case "run": S.remain=S.segEnd-now(); S.phase="paused"; hush(); render(); break;
+    case "paused": S.segEnd=now()+S.remain; S.phase="run"; wake(true); render(); break;
+    case "manual": if(!S.startedAt)S.startedAt=Date.now(); wake(true); stepDone(); break;
+  }
+}
+function skipAction(){
+  unlock();
+  if(S.phase==="run"||S.phase==="paused"){hush();stepDone();}
+  else advance();
+}
+
+/* ---------- Rendering ---------- */
+var CIRC=565.49;
+function chip(text,cls,foot){
+  var el=document.createElement("span");el.className="chip"+(cls?" "+cls:"");
+  if(foot)el.insertAdjacentHTML("beforeend",footSvg(foot));
+  el.appendChild(document.createTextNode(text));
+  return el;
+}
+
+function render(){
+  if(S.view!=="work")return;
+  var e=ex(),st=step(),b=BLOCKS[e.bi];
+  $("w-block").textContent="Блок "+b.n+" · "+b.name;
+  $("w-count").textContent=(S.ex+1)+" / "+EX.length;
+  $("w-prog").style.width=((S.ex+S.st/e.steps.length)/EX.length*100).toFixed(2)+"%";
+  $("w-group").textContent=e.grp||b.name;
+  $("w-name").textContent=e.name;
+  $("w-dose").textContent="Дозировка: "+e.dose;
+  $("w-start").textContent=e.start;
+  $("w-how").textContent=e.how;
+  $("w-goal").textContent=e.goal;
+  if(S.animEx!==S.ex){S.animEx=S.ex;startAnim();}
+  var nx=EX[S.ex+1];$("w-next").textContent=nx?"Дальше: "+nx.name:"Это последнее упражнение";
+
+  var c=$("w-chips");c.textContent="";
+  if(st.k==="rest"){
+    var nxt=e.steps[S.st+1];
+    c.appendChild(chip("Отдых перед подходом "+(nxt?nxt.set:"")+" из "+(nxt?nxt.sets:""),"rest"));
+  }else{
+    if(st.label)c.appendChild(chip(st.label));
+    if(st.side)c.appendChild(chip(sideWord(st),"",st.side));
+    if(st.sets>1)c.appendChild(chip((e.setWord||"Подход")+" "+st.set+" из "+st.sets));
+    if(st.more)c.appendChild(chip("Правой — больше","more"));
+  }
+
+  var m=$("w-main");m.classList.remove("is-pause","is-done");
+  if(S.phase==="idle")m.textContent="Старт";
+  else if(S.phase==="run"){m.textContent="Пауза";m.classList.add("is-pause");}
+  else if(S.phase==="paused")m.textContent="Продолжить";
+  else if(S.phase==="manual"){m.textContent="Готово";m.classList.add("is-done");}
+  $("w-prev").disabled=(S.ex===0&&S.st===0);
+  var mu=$("w-mute");mu.innerHTML=S.muted?ICON_MUTE:ICON_VOL;mu.setAttribute("aria-label",S.muted?"Включить звук":"Выключить звук");
+
+  // pips for hold steps
+  var p=$("w-pips");p.textContent="";
+  if(st.k==="hold"){for(var i=0;i<st.reps;i++)p.appendChild(document.createElement("i"));}
+  drawDial(true);
+}
+
+function setArc(frac,snap){
+  var a=$("w-arc");
+  if(snap){a.style.transition="none";a.setAttribute("stroke-dashoffset",(CIRC*(1-frac)).toFixed(2));void a.getBoundingClientRect();a.style.transition="";}
+  else a.setAttribute("stroke-dashoffset",(CIRC*(1-frac)).toFixed(2));
+}
+
+function drawDial(force){
+  if(S.view!=="work")return;
+  var st=step(),d=$("w-dial"),big=$("w-big"),sub=$("w-sub"),br=$("w-breath");
+  var key=S.ex+"."+S.st+"."+S.si+"."+S.phase,snap=force||key!==S.drawnKey;S.drawnKey=key;
+  br.hidden=true;big.classList.remove("txt");
+  if(S.phase==="idle"){
+    d.dataset.p="idle";setArc(0,true);
+    if(st.k==="hold"){big.textContent=st.reps+" × "+st.hold+" с";big.classList.add("txt");}
+    else big.textContent=fmt(st.sec||0);
+    sub.textContent="Нажми «Старт»";
+    pips(0,-1);return;
+  }
+  if(S.phase==="manual"){
+    d.dataset.p="manual";setArc(1,true);
+    big.textContent=st.text;big.classList.add("txt");
+    sub.textContent="Сделай и нажми «Готово»";
+    return;
+  }
+  var seg=S.segs[S.si];if(!seg)return;
+  var rem=S.phase==="paused"?S.remain:S.segEnd-now();rem=Math.max(0,rem);
+  var frac=1-rem/seg.ms,secs=Math.ceil(rem/1000);
+  d.dataset.p=seg.p;
+  setArc(1-frac,snap);
+  big.textContent=fmt(secs);
+  var t="";
+  switch(seg.p){
+    case "prep": t=st.side?sideWord(st):(st.label||"Приготовься");break;
+    case "work": t=st.label||"Выполняй";break;
+    case "hold": t="Держи · "+seg.rep+" из "+st.reps;break;
+    case "relax": t="Расслабь · "+seg.rep+" из "+st.reps;break;
+    case "rest": t="Отдых";break;
+    case "breath":
+      var el=(seg.ms-rem)/1000,cyc=el%10,inh=cyc<4;
+      t=inh?"Вдох":"Выдох";
+      var sc=inh?0.55+0.45*(cyc/4):1-0.45*((cyc-4)/6);
+      br.hidden=false;
+      if(!window.matchMedia||!window.matchMedia("(prefers-reduced-motion: reduce)").matches)br.style.transform="scale("+sc.toFixed(3)+")";
+      break;
+  }
+  sub.textContent=S.phase==="paused"?"Пауза":t;
+  if(st.k==="hold"){
+    var done=seg.p==="prep"?0:(seg.p==="hold"?seg.rep-1:seg.rep);
+    pips(done,seg.p==="hold"?seg.rep-1:-1);
+  }
+}
+function pips(done,cur){
+  var items=$("w-pips").children;
+  for(var i=0;i<items.length;i++){items[i].className=(i<done?"on":"")+(i===cur?" cur":"");}
+}
+
+var REDUCED=false;try{REDUCED=window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
+var animCur=null,animT0=0,animRAF=0,animLast=0;
+function drawAnim(){if(!animCur)return;var p=REDUCED?0.3:((now()-animT0)/1000/animCur.T)%1;$("w-anim-svg").innerHTML=animCur.f(p);}
+function animLoop(ts){animRAF=0;if(S.view!=="work"||!animCur)return;if(ts-animLast>=33){animLast=ts;drawAnim();}animRAF=requestAnimationFrame(animLoop);}
+function startAnim(){animCur=AN[ex().anim]||null;animT0=now();drawAnim();if(!REDUCED&&!animRAF)animRAF=requestAnimationFrame(animLoop);}
+function stopAnim(){if(animRAF)cancelAnimationFrame(animRAF);animRAF=0;}
+
+var toastT=null;
+function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove("show");},2200);}
+
+/* ---------- Home ---------- */
+function streak(){
+  var h=store.get("ss_hist",[]),d=new Date(),c=0;
+  if(h.indexOf(dkey(d))<0)d.setDate(d.getDate()-1);
+  while(h.indexOf(dkey(d))>=0){c++;d.setDate(d.getDate()-1);}
+  return c;
+}
+var WD=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+function renderHome(){
+  var h=store.get("ss_hist",[]),s=streak();
+  $("h-streak").textContent=s;
+  $("h-streak-w").textContent=plural(s,["день","дня","дней"])+" подряд";
+  $("h-total").textContent=h.length;
+  var days=$("h-days");days.textContent="";
+  var d=new Date();d.setDate(d.getDate()-13);
+  for(var i=0;i<14;i++){
+    var k=dkey(d),el=document.createElement("div");
+    el.className="day"+(h.indexOf(k)>=0?" on":"")+(i===13?" today":"");
+    el.title=d.toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+    el.innerHTML="<i></i>";el.appendChild(document.createTextNode(WD[d.getDay()].charAt(0)));
+    days.appendChild(el);d.setDate(d.getDate()+1);
+  }
+  var pr=store.get("ss_progress",null),rb=$("h-resume");
+  if(pr&&pr.date===today()&&pr.ex>0&&pr.ex<EX.length&&h.indexOf(today())<0){
+    rb.hidden=false;rb.textContent="Продолжить с упражнения "+(pr.ex+1)+" — "+EX[pr.ex].short;rb.dataset.ex=pr.ex;
+  }else rb.hidden=true;
+}
+function buildBlocks(){
+  var root=$("h-blocks"),total=0;
+  BLOCKS.forEach(function(b){
+    var sec=b.ex.reduce(function(a,e){return a+exSec(e);},0);total+=sec;
+    var s=document.createElement("section");s.className="blk";
+    s.innerHTML='<div class="blk-h"><span class="blk-n">Блок '+b.n+'</span><h2></h2><span class="blk-t">≈ '+Math.round(sec/60)+' мин</span></div>';
+    s.querySelector("h2").textContent=b.name;
+    var ol=null;
+    b.ex.forEach(function(e){
+      if(e.group||!ol){
+        if(e.group){var g=document.createElement("p");g.className="sub";g.textContent=e.group;s.appendChild(g);}
+        ol=document.createElement("ol");ol.className="exl";s.appendChild(ol);
+      }
+      var li=document.createElement("li"),bt=document.createElement("button");
+      bt.type="button";bt.className="exr";bt.setAttribute("aria-label","Начать с упражнения «"+e.short+"»");
+      bt.innerHTML='<span class="exr-i">'+e.num+'</span><span class="exr-b"><span class="exr-n"></span><span class="exr-d"></span></span>'+CHEV;
+      bt.querySelector(".exr-n").textContent=e.name;bt.querySelector(".exr-d").textContent=e.dose;
+      bt.addEventListener("click",function(){startFrom(e.idx);});
+      li.appendChild(bt);ol.appendChild(li);
+    });
+    root.appendChild(s);
+  });
+  $("h-meta").textContent=BLOCKS.length+" блока · "+EX.length+" упражнений · ≈ "+Math.round(total/60)+" мин";
+}
+
+/* ---------- Views ---------- */
+function show(v){
+  S.view=v;
+  $("work").hidden=v!=="work";$("done").hidden=v!=="done";
+  if(v!=="work")stopAnim();
+  if(v==="home"){renderHome();window.scrollTo(0,0);}
+}
+function saveProgress(){store.set("ss_progress",{date:today(),ex:S.ex});}
+function startFrom(i){
+  unlock();
+  S.ex=i;S.st=0;S.startedAt=0;S.muted=false;S.animEx=-1;settle();
+  show("work");render();
+  var wm=document.querySelector(".wmain");if(wm)wm.scrollTop=0;
+}
+function closeWork(){
+  S.phase="idle";hush();wake(false);
+  if(S.ex>0)saveProgress();
+  show("home");
+}
+
+/* ---------- Wiring ---------- */
+function start(data){
+  buildBlocks();
+  $("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;
+  $("opt-beep").addEventListener("change",function(e){SET.beep=e.target.checked;store.set("ss_set",SET);if(SET.beep){unlock();tone("ready");}});
+  $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice)say("Подсказки включены");});
+  $("h-start").addEventListener("click",function(){startFrom(0);});
+  $("h-resume").addEventListener("click",function(e){startFrom(parseInt(e.currentTarget.dataset.ex,10)||0);});
+  $("w-main").addEventListener("click",mainAction);
+  $("w-skip").addEventListener("click",skipAction);
+  $("w-prev").addEventListener("click",back);
+  $("w-close").addEventListener("click",closeWork);
+  $("w-mute").addEventListener("click",function(){S.muted=!S.muted;if(S.muted)hush();render();});
+  $("d-home").addEventListener("click",function(){show("home");});
+  document.addEventListener("keydown",function(e){
+    if(S.view!=="work")return;
+    if(e.code==="Space"&&e.target.tagName!=="BUTTON"){e.preventDefault();mainAction();}
+    else if(e.key==="ArrowRight")skipAction();
+    else if(e.key==="ArrowLeft")back();
+  });
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.view==="work"&&(S.phase==="run"||S.phase==="manual"))wake(true);});
+  setInterval(tick,100);
+
+  renderHome();
+  if(data&&data.view==="work"&&typeof data.ex==="number"){
+    startFrom(Math.min(Math.max(0,data.ex),EX.length-1));
+    S.st=Math.min(data.st||0,ex().steps.length-1);settle();render();
+  }
+}
+try{if(window.claude&&window.claude.hot&&window.claude.hot.snapshot)window.claude.hot.snapshot(function(){return {view:S.view,ex:S.ex,st:S.st};});}catch(e){}
+var hot=window.claude&&window.claude.hot;
+if(hot&&hot.ready)hot.ready(start);else start((hot&&hot.data)||{});
+})();
+</script>
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+</script>
+</body>
+</html>
