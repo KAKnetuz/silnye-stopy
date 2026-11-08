@@ -233,3 +233,30 @@ test("аниме-геометрия: все 27 движений на ключе�
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+
+test("аниме-скетч: вторичные штрихи сохраняют повороты без дублирования transform", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const outcome = await page.evaluate(() => {
+    const raw = '<path d="M0 0L10 10" class="ft" transform="rotate(20 5 5)"/>';
+    const result = AN.sketchify(raw);
+    const root = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    root.innerHTML = result;
+    const paths = [...root.querySelectorAll("path")];
+    return {
+      count: paths.length,
+      duplicate: /<path[^>]*\btransform="[^"]*"[^>]*\btransform="/.test(result),
+      original: paths[0]?.getAttribute("transform"),
+      secondary: paths[1]?.getAttribute("transform"),
+      secondaryClass: paths[1]?.getAttribute("class")
+    };
+  });
+  assert.equal(outcome.count, 2);
+  assert.equal(outcome.duplicate, false);
+  assert.equal(outcome.original, "rotate(20 5 5)");
+  assert.match(outcome.secondary, /^translate\([^)]+\) rotate\(20 5 5\)$/);
+  assert.match(outcome.secondaryClass, /\bsk2d\b/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
