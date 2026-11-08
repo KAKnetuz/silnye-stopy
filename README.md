@@ -62,3 +62,7 @@ npm install
 npx playwright install chromium
 npm test
 ```
+
+## Лицензия
+
+© 2026 KAKnetuz. Все права защищены — подробности в файле [LICENSE](LICENSE). Шрифты в папке `fonts/` — по лицензии SIL Open Font License 1.1.
