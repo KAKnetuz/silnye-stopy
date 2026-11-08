@@ -1,12 +1,13 @@
 // Offline app shell: a new service-worker revision installs into a separate cache.
 // Never update individual shell files in the active cache: that can mix JS/CSS/HTML versions.
-const CACHE = "silnye-stopy-shell-v1.9";
+const CACHE = "silnye-stopy-shell-v1.8";   // = APP_VERSION в js/app.js; меняется с каждым выпуском (проверяет автотест)
 const SHELL = ["./", "./index.html", "./styles.css", "./js/core.js", "./js/exercises.js", "./js/anim.js", "./js/audio.js", "./js/app.js",
   "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
   "./fonts/GolosText.woff", "./fonts/Unbounded.woff", "./fonts/MartianMono.woff"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: "reload" — берём файлы с сервера, а не из HTTP-кэша браузера (GitHub Pages кэширует их на 10 минут)
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", e => {
