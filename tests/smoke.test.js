@@ -399,7 +399,6 @@ test("настройки: мужской голос подсказок — вы�
   assert.equal(last.voice, "Russian Russia");
   assert.equal(await page.evaluate(() => ruVoice.voiceURI), "ru-ru-x-rud-local", "должен выбраться мужской голос");
   assert.equal(last.pitch, 1, "настоящий мужской голос не понижаем");
-  assert.ok(await page.isHidden("#voice-male-note"));
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("ss_set")).vkind), "male", "выбор сохраняется");
   await page.click("#vk-female");
   assert.equal(await page.evaluate(() => ruVoice.voiceURI), "ru-ru-x-ruc-local");
@@ -407,12 +406,12 @@ test("настройки: мужской голос подсказок — вы�
   await ctx.close();
 });
 
-test("настройки: мужского голоса на телефоне нет — подсказки ниже по тону и есть подсказка, где его включить", async () => {
+test("настройки: мужского голоса на телефоне нет — подсказки ниже по тону, без пояснения", async () => {
   const { ctx, page, errors } = await openWithVoices([{ name: "Русский Россия", voiceURI: "Русский Россия", lang: "ru-RU", localService: true }]);
   await page.click("#vk-male");
   const last = await page.evaluate(() => window.__spoken.filter(s => s.text.trim()).pop());
   assert.ok(last.pitch < 0.8, "тон должен быть понижен");
-  assert.ok(await page.isVisible("#voice-male-note"), "нет подсказки, как включить мужской голос");
+  assert.equal(await page.locator("#voice-male-note").count(), 0, "пояснения о мужском голосе в настройках быть не должно");
   await page.click("#opt-voice");
   assert.ok(await page.isDisabled("#vk-male"), "при выключенных подсказках выбор голоса неактивен");
   assert.deepEqual(errors, []);
