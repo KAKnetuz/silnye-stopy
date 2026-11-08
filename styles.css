@@ -89,6 +89,8 @@ h1,h2,h3{text-wrap:balance}
 .themes>span{font-weight:500}
 .seg{display:inline-grid;grid-template-columns:repeat(3,auto);gap:3px;padding:3px;border-radius:12px;background:var(--line)}
 .seg button{border:0;border-radius:9px;background:transparent;padding:0 14px;min-height:44px;font-weight:600;font-size:15px;color:var(--muted)}
+.seg2{grid-template-columns:repeat(2,auto)}
+.seg button:disabled{opacity:.45}
 .seg button[aria-checked="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 .hero{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
