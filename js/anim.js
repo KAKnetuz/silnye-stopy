@@ -804,7 +804,7 @@ A.wallsit={T:5,focus:"quad",f:function(p){
 /* ---------- заминка ---------- */
 /* 24. Велосипед лёжа */
 A.bike={T:2.2,focus:"quad",f:function(p){
-  var hip=[126,103],th=-2*PI*p,c=[hip[0]+14,hip[1]-42],R=10,cam=camFit(70,46,166,FLOOR);
+  var hip=[126,103],th=-2*PI*p,c=[hip[0]+14,hip[1]-42],R=10,cam=camFit(70,46,166,FLOOR);cam.y-=5;
   var legs=[0,1].map(function(i){var a=th+i*PI;return {to:[c[0]+R*Math.cos(a),c[1]+R*Math.sin(a)],side:-1,an:18*Math.sin(a)};});
   var g=fig({hip:hip,tor:-90,legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
   var vc=cam.p(c);
@@ -832,7 +832,7 @@ A.swall={T:4,focus:"calf",f:function(p){
 }};
 /* 27. Тряпочки: ноги вверх, встряхиваем стопы, затем медленное дыхание */
 A.rags={T:14,f:function(p){ // 4 с встряхиваем, затем один медленный вдох на 4 и выдох на 6
-  var SH=4/14,shake=p<SH,w=2*PI*p*45,j=shake?1:0,cam=camFit(70,40,166,FLOOR);
+  var SH=4/14,shake=p<SH,w=2*PI*p*45,j=shake?1:0,cam=camFit(70,40,166,FLOOR);cam.y-=5;
   var legs=[{th:180+j*4*Math.sin(w),kn:j*(6+5*Math.sin(w*1.3)),an:j*28*Math.sin(w+1)},{th:178-j*4*Math.sin(w+0.7),kn:j*(6+5*Math.sin(w*1.1+1)),an:j*28*Math.sin(w+2)}];
   var g=fig({hip:[124,103],tor:-90,far:[2,0],legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
   var s=cam.g(floor(109,60,180)+g.svg),ft=cam.p(g.legs[0].toe);
