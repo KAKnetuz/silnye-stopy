@@ -190,6 +190,9 @@ function akHeadSide(c,up,face){ // голова сбоку: череп, остр
   s+=path(smoothPath(jpts([P(-5.6,2),P(-1,6.4),P(3.4,6.6),P(6.4,3.2),P(6.6,.8),P(4.6,2.6),P(2.4,3.4)],.3),false),"sk sk2");
   s+=path(smoothPath(jpts([P(-5.4,3.4),P(-9,2.2),P(-10.6,-3),P(-9.6,-9),P(-7.6,-13)],.35),false),"sk");
   s+=path(smoothPath(jpts([P(-5.6,2),P(-7.6,-1.6),P(-7.8,-7),P(-6.4,-11.4)],.35),false),"sk sk2");
+  // Локоны и штрих волос сохраняют выразительность головы при движении корпуса.
+  s+=path(smoothPath(jpts([P(-5.5,2.7),P(-7.5,-.2),P(-8.5,-4.8)],.14),false),"sk sk2");
+  s+=path(smoothPath(jpts([P(-3.7,6.1),P(-2.8,3.8),P(-.4,2.6)],.14),false),"skc");
   return s;
 }
 function akSide(hip,hipF,sh,shF,up,legs,arms,face){
@@ -265,6 +268,15 @@ function akHeadFront(c,back){
   s+=path(smoothPath(jpts([P(-6.8,0),P(-6.6,5.6),P(-2,8.4),P(3,8.2),P(6.8,5),P(7,-1.4),P(6.4,-5)],.3),false),"sk sk2");
   s+=path(smoothPath(jpts([P(-6.4,4),P(-3,2),P(0,4.4),P(3,2),P(6.4,4)],.25),false),"sk sk2");
   s+=path(smoothPath(jpts([P(6.6,3),P(8.6,-2),P(8.4,-8),P(7,-11)],.3),false),"sk");
+  // Мимика и мягкая штриховка волос: единый аниме-скетч для фронтальных сцен.
+  [-1,1].forEach(function(sd){
+    var ex=sd*2.8;
+    s+=path("M"+f1(c[0]+ex-1.5)+" "+f1(c[1]+.1)+"Q"+f1(c[0]+ex)+" "+f1(c[1]-1.2)+" "+f1(c[0]+ex+1.5)+" "+f1(c[1]+.1),"eye");
+    s+=ci([c[0]+ex+.15,c[1]+.55],.6,"iris");
+    s+=path("M"+f1(c[0]+ex-1.7)+" "+f1(c[1]-2.5)+"Q"+f1(c[0]+ex)+" "+f1(c[1]-3.3)+" "+f1(c[0]+ex+1.7)+" "+f1(c[1]-2.4),"skc");
+  });
+  s+=path("M"+f1(c[0]-.5)+" "+f1(c[1]+2.1)+"l.5 .7","skc");
+  s+=path("M"+f1(c[0]-1.5)+" "+f1(c[1]+4.1)+"Q"+f1(c[0])+" "+f1(c[1]+4.8)+" "+f1(c[0]+1.5)+" "+f1(c[1]+4.1),"skc");
   return s;
 }
 /* akFront: персонаж спереди (o.back — со спины). o.x,o.y — центр таза; legs[i]: {ank, tilt, rise} или {tuck:1} (согнутая нога у колена опорной);
