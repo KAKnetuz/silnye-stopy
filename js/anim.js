@@ -926,10 +926,10 @@ function animeStudy(name,p){
   if(o.view==="top"){
     s+=footTop(67,168,{sc:.64,rot:-a-spread*.5});
     s+=footTop(105,168,{sc:.64,rot:a+spread*.5,mir:1});
-    if(o.rot||o.spread)s+=arrow([155,160],[155+Math.max(-20,Math.min(20,a+spread)),151]);
+    if(o.rot||o.spread){var d=a+spread;s+=arrow([155,158],[155+Math.max(-20,Math.min(20,d)),158-Math.abs(d)*.25]);}
   }else{
     s+=footSide(49,169,{sc:.92,shin:28,rot:a,curl:cu,arch:name==="caterpillar"?1.6*t:0,s:name==="caterpillar"?.5*t:0});
-    if(o.rot||o.curl||name==="caterpillar")s+=arrow([158,165],[158+Math.max(-18,Math.min(18,a*.6)),148-9*cu]);
+    if(o.rot||o.curl||name==="caterpillar"){var dx=a*.6+cu*9+(name==="caterpillar"?8*t:0);s+=arrow([158,165],[158+Math.max(-18,Math.min(18,dx)),165-8*cu-3*t]);}
   }
   s+=tx(231,163,t>.5?"движение":"исходно",t>.5?"capa":"cap","end");
   return s;
