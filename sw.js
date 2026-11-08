@@ -1,6 +1,6 @@
 // Offline app shell: a new service-worker revision installs into a separate cache.
 // Never update individual shell files in the active cache: that can mix JS/CSS/HTML versions.
-const CACHE = "silnye-stopy-shell-v1.9";   // = APP_VERSION в js/app.js; меняется с каждым выпуском (проверяет автотест)
+const CACHE = "silnye-stopy-shell-v2.0";   // = APP_VERSION в js/app.js; меняется с каждым выпуском (проверяет автотест)
 const SHELL = ["./", "./index.html", "./styles.css", "./js/core.js", "./js/exercises.js", "./js/anim.js", "./js/audio.js", "./js/app.js",
   "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
   "./fonts/GolosText.woff", "./fonts/Unbounded.woff", "./fonts/MartianMono.woff"];
