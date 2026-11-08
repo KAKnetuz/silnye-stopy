@@ -2,7 +2,7 @@
 "use strict";
 
 /* ---------- Settings, sound, voice, screen ---------- */
-var SET=Object.assign({beep:true,voice:true,music:true},store.get("ss_set",{}));
+var SET=Object.assign({beep:true,voice:true,music:true,vkind:"female"},store.get("ss_set",{}));   // vkind — голос подсказок: "female" | "male"
 var AC=null;
 function unlock(){
   try{
@@ -151,12 +151,26 @@ function updateMusic(){
 }
 function vibrate(p){try{if(SET.beep&&!S.muted&&navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
-var ruVoice=null,voicesKnown=false;
+/* Голос подсказок. Браузер не сообщает пол голоса, поэтому мужской и женский голоса узнаём по имени:
+   Google TTS на Android — ru-ru-x-rud / ru-ru-x-ruf (мужские), ru-ru-x-ruc / -rue / -dfc (женские); Windows — Pavel, Dmitry; Apple — Yuri; Microsoft онлайн — Dmitry. */
+var MALE_RE=/(#male|\bmale\b|муж|x-rud|x-ruf|pavel|павел|dmitr|дмитр|yuri|юри|maxim|максим|ruslan|руслан|alexand|aleksand|александр|artem|артём|ermil|filipp|филипп)/i;
+var FEMALE_RE=/(female|жен|x-ruc|x-rue|x-dfc|irina|ирина|milena|милена|svetlana|светлан|elena|елена|dariya|darya|дарья|alena|алён|ekaterina|екатерин|anna\b|анна|katya|катя|tatyana|татьян|polina|полина|oksana|оксана)/i;
+var ruVoice=null,voicesKnown=false,maleFallback=false;
+function voiceKey(v){return (v.name||"")+" "+(v.voiceURI||"");}
 function loadVoices(){
   try{
     var vs=window.speechSynthesis.getVoices();
-    if(vs&&vs.length){voicesKnown=true;ruVoice=vs.find(function(v){return /^ru/i.test(v.lang);})||null;}
+    if(vs&&vs.length){
+      voicesKnown=true;
+      var ru=vs.filter(function(v){return /^ru/i.test(v.lang);});
+      var male=ru.filter(function(v){return MALE_RE.test(voiceKey(v))&&!/female/i.test(voiceKey(v));});
+      var female=ru.filter(function(v){return FEMALE_RE.test(voiceKey(v));});
+      var local=function(a){return a.find(function(v){return v.localService;})||a[0]||null;};   // офлайн-голос надёжнее сетевого
+      if(SET.vkind==="male"){ruVoice=local(male)||local(ru);maleFallback=!male.length&&!!ru.length;}
+      else{ruVoice=local(female)||local(ru.filter(function(v){return !MALE_RE.test(voiceKey(v));}))||local(ru);maleFallback=false;}
+    }
     $("voice-note").hidden=!(voicesKnown&&!ruVoice&&SET.voice);
+    var mn=$("voice-male-note");if(mn)mn.hidden=!(SET.vkind==="male"&&maleFallback&&SET.voice);
   }catch(e){}
 }
 var canSpeak=("speechSynthesis" in window)&&("SpeechSynthesisUtterance" in window);
@@ -177,6 +191,7 @@ function say(t){
       try{
         if(ss.paused)ss.resume();
         var u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=1.05;
+        if(SET.vkind==="male"&&maleFallback)u.pitch=0.55;   // мужского голоса на устройстве нет — говорим тем, что есть, но ниже
         u.onstart=function(){duck(true);clearTimeout(MUS.duckT);MUS.duckT=setTimeout(function(){duck(false);},Math.max(1500,t.length*90));};u.onend=u.onerror=function(){clearTimeout(MUS.duckT);duck(false);};
         lastUtt=u; // держим ссылку, иначе Chrome может оборвать фразу
         ss.speak(u);

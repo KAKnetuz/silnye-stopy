@@ -279,7 +279,7 @@ function applyTheme(t){
 }
 
 /* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
-var APP_VERSION="2.3",APP_DATE="08.11.2026";
+var APP_VERSION="2.4",APP_DATE="08.11.2026";
 var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
 function openSheet(id){$(id).hidden=false;}
 function closeSheet(id){$(id).hidden=true;}
@@ -340,7 +340,8 @@ function restoreBackup(){
     msg.textContent="Готово. Восстановлено занятий: "+ok.length+", всего теперь: "+Object.keys(all).length+".";
   }catch(e){msg.textContent="Не получилось: код повреждён или скопирован не полностью. Он начинается с «SS1:» — вставьте его целиком.";}
 }
-function syncSettings(){$("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;$("opt-music").checked=!!SET.music;}
+function syncSettings(){$("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;$("opt-music").checked=!!SET.music;syncVoiceKind();}
+function syncVoiceKind(){if(typeof loadVoices==="function")loadVoices();var k=SET.vkind==="male"?"male":"female";["female","male"].forEach(function(id){var b=$("vk-"+id);b.setAttribute("aria-checked",String(id===k));b.disabled=!SET.voice;});}
 function openSettings(){syncSettings();show("settings");var wm=document.querySelector("#settings .wmain");if(wm)wm.scrollTop=0;}
 
 /* ---------- Quotes splash ---------- */
@@ -467,7 +468,12 @@ function start(data){
   ["auto","light","dark"].forEach(function(id){$("th-"+id).addEventListener("click",function(){store.set("ss_theme",id);applyTheme(id);});});
   $("opt-music").checked=!!SET.music;
   $("opt-music").addEventListener("change",function(e){SET.music=e.target.checked;store.set("ss_set",SET);updateMusic();});
-  $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice){primed=false;primeSpeech();say("Подсказки включены");}});
+  $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();syncVoiceKind();if(SET.voice){primed=false;primeSpeech();say("Подсказки включены");}});
+  syncVoiceKind();
+  ["female","male"].forEach(function(id){$("vk-"+id).addEventListener("click",function(){
+    SET.vkind=id;store.set("ss_set",SET);loadVoices();syncVoiceKind();
+    if(SET.voice){primed=false;primeSpeech();say(id==="male"?"Теперь подсказки мужским голосом":"Теперь подсказки женским голосом");}
+  });});
   $("h-start").addEventListener("click",function(){unlock();showEquipment();});
   $("eq-go").addEventListener("click",function(){closeSheet("sh-eq");startFrom(0);});
   $("eq-cancel").addEventListener("click",function(){closeSheet("sh-eq");});
