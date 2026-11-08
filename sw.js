@@ -21,4 +21,21 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  e.respondWith((async () => {\n    const cache = await caches.open(CACHE);\n    const cached = await cache.match(req, { ignoreSearch: true });\n    if (cached) return cached;\n    try {\n      const response = await fetch(req);\n      // Only cache files outside the pre-cached shell if they are valid same-origin responses.\n      if (response.ok && response.type === "basic") await cache.put(req, response.clone());\n      return response;\n    } catch (error) {\n      if (req.mode === "navigate") {\n        const fallback = await cache.match("./index.html");\n        if (fallback) return fallback;\n      }\n      return Response.error();\n    }\n  })());\n});\n
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(req, { ignoreSearch: true });
+    if (cached) return cached;
+    try {
+      const response = await fetch(req);
+      // Only cache files outside the pre-cached shell if they are valid same-origin responses.
+      if (response.ok && response.type === "basic") await cache.put(req, response.clone());
+      return response;
+    } catch (error) {
+      if (req.mode === "navigate") {
+        const fallback = await cache.match("./index.html");
+        if (fallback) return fallback;
+      }
+      return Response.error();
+    }
+  })());
+});
