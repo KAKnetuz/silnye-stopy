@@ -9,7 +9,7 @@ import { chromium } from "playwright";
 
 const ROOT = new URL("..", import.meta.url).pathname;
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".webmanifest": "application/manifest+json",
-  ".png": "image/png", ".woff": "font/woff", ".txt": "text/plain; charset=utf-8" };
+  ".png": "image/png", ".css": "text/css; charset=utf-8", ".woff": "font/woff", ".txt": "text/plain; charset=utf-8" };
 let server, base, browser;
 
 before(async () => {
@@ -37,7 +37,8 @@ async function openApp(context) {
 }
 
 test("файлы приложения на месте и не пустые", async () => {
-  for (const f of ["index.html", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "fonts/GolosText.woff"]) {
+  for (const f of ["index.html", "styles.css", "js/core.js", "js/exercises.js", "js/anim.js", "js/audio.js", "js/app.js",
+    "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "fonts/GolosText.woff"]) {
     const s = await stat(join(ROOT, f));
     assert.ok(s.size > 500, `${f} пустой или слишком маленький (${s.size} байт)`);
   }
@@ -45,6 +46,10 @@ test("файлы приложения на месте и не пустые", asy
   assert.match(sw, /addEventListener\("fetch"/, "в sw.js нет обработчика запросов");
   const html = await readFile(join(ROOT, "index.html"), "utf8");
   assert.ok(!html.includes("fonts.googleapis.com"), "приложение не должно обращаться к внешним шрифтам");
+  for (const f of ["styles.css", "js/core.js", "js/exercises.js", "js/anim.js", "js/audio.js", "js/app.js"]) {
+    assert.ok(html.includes(f), `index.html не подключает ${f}`);
+    assert.ok(sw.includes("./" + f), `sw.js не кэширует ${f} для офлайн-режима`);
+  }
 });
 
 test("первый запуск: заставка с цитатой, затем предупреждение", async () => {
@@ -86,6 +91,22 @@ test("тренировка: инвентарь, таймер и музыка", a
   await page.waitForTimeout(4000);
   assert.notEqual(await page.textContent("#w-sub"), "Нажми «Старт»", "таймер не запустился");
   assert.equal(await page.textContent("#w-main"), "Пауза");
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test("схемы всех 27 упражнений рисуются без ошибок", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+  for (let i = 0; i < 27; i++) {
+    await page.click(`.exr >> nth=${i}`);
+    await page.waitForTimeout(120);
+    const svg = await page.locator("#w-anim-svg").innerHTML();
+    assert.ok(svg.length > 300, `пустая схема у упражнения ${i + 1}`);
+    assert.ok(!/NaN|undefined/.test(svg), `ошибка в координатах схемы упражнения ${i + 1}`);
+    await page.click("#w-close");
+  }
   assert.deepEqual(errors, []);
   await ctx.close();
 });

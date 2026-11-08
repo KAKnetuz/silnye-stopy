@@ -3,7 +3,8 @@
 // а свежая версия файлов скачивается в фоне и появляется со следующего запуска.
 // Поэтому номер версии здесь менять не нужно — обновления приходят сами.
 const CACHE = "silnye-stopy";
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
+const SHELL = ["./", "./index.html", "./styles.css", "./js/core.js", "./js/exercises.js", "./js/anim.js", "./js/audio.js", "./js/app.js",
+  "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
   "./fonts/GolosText.woff", "./fonts/Unbounded.woff", "./fonts/MartianMono.woff"];
 
 self.addEventListener("install", e => {
