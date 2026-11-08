@@ -136,3 +136,21 @@ test("работает без интернета после первого за�
   assert.ok((await page.textContent("h1")).includes("Сильные стопы"));
   await ctx.close();
 });
+
+
+test("PWA: оболочка кэшируется атомарно и с версией", async () => {
+  const sw = await readFile(join(ROOT, "sw.js"), "utf8");
+  assert.match(sw, /const CACHE = ["']silnye-stopy-shell-v[\d.]+["']/, "у кэша нет версии");
+  assert.match(sw, /\.addAll\(SHELL\)/, "все ресурсы должны установиться одним набором");
+  assert.match(sw, /cache\.match\(req/, "приложение должно сначала читать установленную оболочку");
+  assert.doesNotMatch(sw, /fetch\(req\)\.then\([^)]*cache\.put/s, "фоновое обновление отдельных файлов запрещено");
+  const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/);
+  assert.ok(shell, "список ресурсов оболочки отсутствует");
+  const entries = [...shell[1].matchAll(/["'](\.\/[^"']+)["']/g)].map(m => m[1]);
+  assert.equal(new Set(entries).size, entries.length, "дубли в списке ресурсов");
+  for (const item of entries) {
+    if (item === "./") continue;
+    const file = join(ROOT, item.slice(2));
+    assert.ok((await stat(file)).isFile(), `отсутствует офлайн-ресурс: ${item}`);
+  }
+});
