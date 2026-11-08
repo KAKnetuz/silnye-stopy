@@ -260,3 +260,28 @@ test("аниме-скетч: вторичные штрихи сохраняют 
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+
+test("26 индивидуальных аниме-эскизов: движение и подписи", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const result = await page.evaluate(() => {
+    const names = Object.keys(AN).filter(n => AN[n] && typeof AN[n].f === "function" && n !== "shortfoot");
+    return names.map(name => {
+      const first = AN[name].f(0);
+      const middle = AN[name].f(.5);
+      const last = AN[name].f(.75);
+      return { name, panel: first.includes('M4 128H236'),
+        distinct: first !== middle || middle !== last,
+        invalid: /NaN|undefined|Infinity/.test(first + middle + last) };
+    });
+  });
+  assert.equal(result.length, 26);
+  for (const item of result) {
+    assert.ok(item.panel, "нет отдельного эскиза: " + item.name);
+    assert.ok(item.distinct, "нет анимации: " + item.name);
+    assert.ok(!item.invalid, "ошибка геометрии: " + item.name);
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
