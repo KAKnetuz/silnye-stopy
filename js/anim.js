@@ -181,23 +181,30 @@ function akArm(sh,A,far){
   return s;
 }
 function akHeadSide(c,up,face){ // голова сбоку: череп, острый подбородок, чёлка и хвостик
-  var n=[-up[1],up[0]];if(n[0]*face<0)n=[-n[0],-n[1]];
+  var n=[-up[1],up[0]],lying=Math.abs(n[0])<0.35;
+  if(lying){if(n[1]>0)n=[-n[0],-n[1]];}            // лёжа на спине лицо всегда к потолку: направление стоп здесь ни при чём
+  else if(n[0]*face<0)n=[-n[0],-n[1]];
   function P(x,y){return [c[0]+n[0]*x+up[0]*y,c[1]+n[1]*x+up[1]*y];}
   var s=skShape([P(0,7),P(4.6,5.4),P(6.2,1.4),P(5.8,-1.6),P(4.2,-5.4),P(2.4,-7.4),P(.4,-6.4),P(-2.6,-4.6),P(-5.6,-1.4),P(-6.2,2.4),P(-4.4,5.8)],false);
   s+=path(smoothPath(jpts([P(-1,-6.2),P(-.8,-1),P(-1.6,3.4)],.2),false),"skc");
   var e1=P(5.3,.9),e2=P(4,2),e3=P(2.6,1.1),ir=P(4.2,.1),b1=P(5.4,3),b2=P(4,3.8),b3=P(2.5,3.2),m1=P(5.6,-3.4),m2=P(4.6,-3.9);
   s+=path("M"+f1(e1[0])+" "+f1(e1[1])+"Q"+f1(e2[0])+" "+f1(e2[1])+" "+f1(e3[0])+" "+f1(e3[1]),"eye")+ci(ir,.75,"iris")+path("M"+f1(b1[0])+" "+f1(b1[1])+"Q"+f1(b2[0])+" "+f1(b2[1])+" "+f1(b3[0])+" "+f1(b3[1]),"skc")+ln(m1,m2,"skc");   // глаз, бровь, губы
   s+=path(smoothPath(jpts([P(-5.6,2),P(-1,6.4),P(3.4,6.6),P(6.4,3.2),P(6.6,.8),P(4.6,2.6),P(2.4,3.4)],.3),false),"sk sk2");
-  s+=path(smoothPath(jpts([P(-5.4,3.4),P(-9,2.2),P(-10.6,-3),P(-9.6,-9),P(-7.6,-13)],.35),false),"sk");
-  s+=path(smoothPath(jpts([P(-5.6,2),P(-7.6,-1.6),P(-7.8,-7),P(-6.4,-11.4)],.35),false),"sk sk2");
+  if(lying){ // хвост лежит на полу за макушкой, а не уходит под пол
+    s+=path(smoothPath(jpts([P(-4.6,5.6),P(-5.6,9.4),P(-5.2,12.8),P(-6,15.6)],.3),false),"sk")+path(smoothPath(jpts([P(-3.6,6.4),P(-4.8,10.4),P(-4.4,13.6)],.3),false),"sk sk2");
+  }else{
+    s+=path(smoothPath(jpts([P(-5.4,3.4),P(-9,2.2),P(-10.6,-3),P(-9.6,-9),P(-7.6,-13)],.35),false),"sk");
+    s+=path(smoothPath(jpts([P(-5.6,2),P(-7.6,-1.6),P(-7.8,-7),P(-6.4,-11.4)],.35),false),"sk sk2");
+  }
   // Локоны и штрих волос сохраняют выразительность головы при движении корпуса.
-  s+=path(smoothPath(jpts([P(-5.5,2.7),P(-7.5,-.2),P(-8.5,-4.8)],.14),false),"sk sk2");
+  if(!lying)s+=path(smoothPath(jpts([P(-5.5,2.7),P(-7.5,-.2),P(-8.5,-4.8)],.14),false),"sk sk2");
   s+=path(smoothPath(jpts([P(-3.7,6.1),P(-2.8,3.8),P(-.4,2.6)],.14),false),"skc");
   return s;
 }
 function akSide(hip,hipF,sh,shF,up,legs,arms,face){
   var s="",n=[-up[1],up[0]];
   var hd=mv(hip,up,39.5),nb=mv(hip,up,31.5);
+  if(Math.abs(up[1])<0.35)hd=[hd[0],hd[1]+1.6];   // лёжа затылок лежит на полу: голова чуть ниже оси корпуса, шея расслаблена
   if(arms[1])s+=akArm(shF,arms[1],true);
   if(legs[1])s+=akLeg(hipF,legs[1],true);
   var tf=sideOf(hip,nb,[face,0])>0,TF=[[0,6.4],[.32,4.4],[.68,5.4],[1,4.6]],TB=[[0,7],[.3,4.6],[.68,5.1],[1,4.4]];
@@ -247,9 +254,10 @@ function frontJoints(o){
 function frontFoot(a,sd,o,back){ // стопа спереди (или сзади) в масштабе персонажа; tilt — опора на наружный край, rise — подъём на носки
   var m=-sd,t=o.tilt||0,P,piv=[a[0]-m*5,a[1]+6.9],ang=-m*t,s="";
   function T(q){var p=[a[0]+m*q[0],a[1]+q[1]];return t?rotP(p,piv,ang):p;}
-  if(back){var h=o.rise||0;
-    if(h>1.2)s+=skShape([[a[0]-5.2,a[1]+5.4],[a[0]+5.2,a[1]+5.4],[a[0]+5.4,a[1]+7.4],[a[0]-5.4,a[1]+7.4]].map(function(q){return [q[0],q[1]];}),false);
-    s+=skShape([[-2.6,0],[-3.3,3.6-h],[-2.8,6.4-h],[0,7.3-h],[2.8,6.4-h],[3.3,3.6-h],[2.6,0]].map(T),false);
+  if(back){ // со спины: лодыжка уже поднята вместе с пяткой; передний отдел стопы остаётся на полу (o.floor)
+    var F=o.floor,hb=a[1]+7.3;
+    if(F!==undefined&&F-hb>.6)s+=skShape([[a[0]-3,hb-1.4],[a[0]+3,hb-1.4],[a[0]+4.5,F-1.8],[a[0]+4.7,F],[a[0]-4.7,F],[a[0]-4.5,F-1.8]],false); // подошва уходит вниз-вперёд к подушечкам
+    s+=skShape([[-2.6,0],[-3.3,3.6],[-2.8,6.4],[0,7.3],[2.8,6.4],[3.3,3.6],[2.6,0]].map(T),false);
     return s;}
   P=[[-3,0],[-4.3,3.2],[-5,6.6],[-2,7.3],[1.8,7.5],[5,7],[5.8,5.6],[4.6,3],[3,.4]].map(T);
   s+=skShape(P,false);
@@ -297,7 +305,7 @@ function akFront(o){
     s+=skJoint(k,3.4)+skContour(k,a,.35,SA,SB)+skContour(hp,k,.5,TA,TB)+skHatch(k,a,SA,SB,outA?-1:1,.15,.8);
     if(FOCUS==="calf"||FOCUS==="shin")s+=skMuscle(k,a,outA?SHI:SHO,outA?-1:1,.08,FOCUS==="calf"?.52:.72,.8);
     if(FOCUS==="quad")s+=skMuscle(hp,k,TA,1,.12,.88,.7);
-    feet+=frontFoot(o.back?J.anks[i]:J.anks[i],sd,{tilt:L.tilt,rise:L.rise},o.back);}
+    feet+=frontFoot(J.anks[i],sd,{tilt:L.tilt,rise:L.rise,floor:o.floor},o.back);}
   var pel=[[hx-6.4,hy-6],[hx,hy-5.4],[hx+6.4,hy-6],[hx+8.8,hy-1],[hx+9.4,hy+3.6],[hx+5,hy+6.8],[hx,hy+7.8],[hx-5,hy+6.8],[hx-9.4,hy+3.6],[hx-8.8,hy-1]];
   s+=path(smoothPath(pel,true),"cloth")+path(smoothPath(jpts([[hx-9.2,hy+4.4],[hx-8.8,hy-1],[hx-6.4,hy-6],[hx,hy-5.4],[hx+6.4,hy-6],[hx+8.8,hy-1],[hx+9.2,hy+4.4]],.3),false),"sk");  // пояс леггинсов поверх бёдер
   s+=feet;
@@ -381,7 +389,7 @@ function legFront(cx,sd,o){ // поворот вокруг наружного к
   var inner=rotP([cx-sd*12,102],[px,102],t),show=Math.abs(t)>1&&h<0.5;
   if(show)s+=path("M"+f1(px)+" 102L"+f1(inner[0])+" "+f1(inner[1])+"L"+f1(inner[0])+" 102Z","gap");
   s+='<g transform="rotate('+f1(t)+" "+f1(px)+' 102) translate(0 '+f1(-h)+')">'+legFrontInner(cx,sd,o.curl,o)+"</g>";
-  if(show)s+=dot([px,102]);
+  if(show&&!o.nodot)s+=dot([px,102]);
   return s;
 }
 
@@ -572,16 +580,14 @@ A.bear={T:1.6,focus:"shin",f:function(p){
   function tilt(g){return g.stance?BW.roll:BW.roll*(1-sm(g.k));}
   var inner='<g transform="translate(180 18) scale(.98) translate(-178 0)">'+
     '<ellipse cx="178" cy="102.4" rx="56" ry="3" class="shd"/>'+
-    legFront(156,-1,{tilt:tilt(left),lift:1.7*left.lift,curl:.18,cuff:1,edge:1})+
-    legFront(200,1,{tilt:tilt(right),lift:1.7*right.lift,curl:.18,cuff:1,edge:1})+"</g>";
+    legFront(156,-1,{tilt:tilt(left),lift:1.7*left.lift,curl:.18,cuff:1,edge:1,nodot:1})+
+    legFront(200,1,{tilt:tilt(right),lift:1.7*right.lift,curl:.18,cuff:1,edge:1,nodot:1})+"</g>";
   var supporting=left.stance?0:1;
   var foot=F.legs[supporting].ank;
   s+=inset("insBear",[181,79],56,inner,cam.p([foot[0]+4,foot[1]+6]));
   // Подсветка точек контакта только у нагруженной стопы; при переносе точки нет.
-  if(left.stance)s+=ci([168,113],2.3,"acf");
-  if(right.stance)s+=ci([212,113],2.3,"acf");
   // Стрелка обозначает общее направление ходьбы; опорные точки меняются по фазам.
-  s+=arrow([69,112],[86,112]);
+  var a0=cam.p([24,56.6]);s+=arrow([a0[0],a0[1]],[a0[0]+18,a0[1]+4]);
   return s+note("опора на наружный край",true);
 }};
 
@@ -721,20 +727,21 @@ A.artist={T:6,focus:"arch",f:function(p){
 /* ---------- стоя ---------- */
 /* 16. Короткая стопа: пятка и пальцы на полу, подушечка подтягивается к пятке, свод поднимается «мостиком» */
 A.shortfoot={T:4,focus:"arch",f:function(p){
-  var u=sm(Math.min(1,ease(p)*1.3)),sc=2.6,x=28,y=118,o={sc:sc,arch:1.7*u,s:0.45*u,shin:34};
+  var u=sm(Math.min(1,ease(p)*1.3)),sc=2.6,x=28,y=118,o={sc:sc,arch:-.17+.42*u,s:.2*u,shin:34};   // просвет под сводом ~1 → ~3 см, стопа укорачивается на ~1 см
   var g=footGeo(o),ax=x+0.45*g.bx*sc,ballX=x+g.bx*sc,tipX=x+g.tip*sc;
   var s=floor(y+.5,8,232);
-  s+=footSideSk(x,y,{sc:sc,shin:34}).replace(/class="(ft|ftf|fsd|fsc)"/g,'class="gh"');
-  s+=path("M"+f1(x+2)+" "+f1(y)+"Q"+f1(ax)+" "+f1(y-2*g.ah*sc+4)+" "+f1(ballX-2)+" "+f1(y)+"Z","gap");
+  s+=footSideSk(x,y,{sc:sc,arch:-.17,shin:34}).replace(/class="(ft|ftf|fsd|fsc)"/g,'class="gh"');
+  var gp=[];for(var xl=1;xl<=g.bx;xl+=1)gp.push(f1(x+xl*sc)+" "+f1(y+soleY(o,xl)*sc));
+  s+=path("M"+gp.join("L")+"Z","gap");                                                                              // просвет под сводом — ровно по подошве
   s+=footSideSk(x,y,o)+dot([x+2,y])+dot([tipX-4,y]);
-  s+='<g opacity="'+f1(0.2+0.8*u)+'">'+arrow([ax,y-4],[ax,y-8-g.ah*sc*0.9])+arrow([ballX+14,y+10],[ballX-18,y+10])+"</g>";
+  s+='<g opacity="'+f1(0.2+0.8*u)+'">'+arrow([ax,y-2],[ax,y-6-g.ah*sc*0.9])+arrow([ballX+10,y+10],[ballX-10,y+10])+"</g>";
   return s+note(u>0.5?"свод вверх, пальцы ровно":"свод расслаблен",u>0.5)+view("сбоку, изнутри");
 }};
 /* 17. Подъём на носки с мячом между лодыжками — со спины: видно, что пятки остаются ровными */
 A.raise={T:2.6,focus:"calf",f:function(p){
-  var u=ease(p),h=9*u,cam=camFit(52,6,176,FLOOR,118);
-  var ay=102.6-h,b=akFront({x:110,y:57-h,back:1,legs:[{ank:[104,ay],rise:h},{ank:[116,ay],rise:h}],arms:[{a1:8,a2:4},{hand:[128,52]}]});
-  var s=cam.g(floor(FLOOR,60,170)+chairBack(139,52,FLOOR)+b.svg+ci([110,ay-1],3.6,"ball")+ln([104,ay-12],[104,ay+8],"acd")+ln([116,ay-12],[116,ay+8],"acd"));
+  var u=ease(p),h=6*u,cam=camFit(52,6,176,FLOOR,118);   // пятки поднимаются ~на 10 см (6 ед. рига)
+  var ay=102.6-h,b=akFront({x:110,y:57-h,back:1,floor:109.9,legs:[{ank:[104,ay],rise:h},{ank:[116,ay],rise:h}],arms:[{a1:8,a2:4},{hand:[128,52]}]});
+  var s=cam.g(floor(FLOOR,60,170)+chairBack(139,52,FLOOR)+b.svg+ci([110,ay-1],3.6,"ball")+ln([104,ay-12],[104,ay+8],"acd")+ln([116,ay-12],[116,ay+8],"acd"))+dot(cam.p([104,FLOOR-.2]))+dot(cam.p([116,FLOOR-.2]));   // точки опоры — подушечки стоп на полу
   var top=cam.p([110,6]);
   s+='<g opacity="'+f1(Math.abs(Math.sin(2*PI*p)))+'">'+(Math.sin(2*PI*p)>0?arrow([top[0]-40,58],[top[0]-40,40]):arrow([top[0]-40,40],[top[0]-40,58]))+"</g>";
   return s+view("со спины")+note("пятки ровно",u>.5);
@@ -805,11 +812,11 @@ A.wallsit={T:5,focus:"quad",f:function(p){
 /* ---------- заминка ---------- */
 /* 24. Велосипед лёжа */
 A.bike={T:2.2,focus:"quad",f:function(p){
-  var hip=[126,103],th=-2*PI*p,c=[hip[0]+14,hip[1]-42],R=10,cam=camFit(70,46,166,FLOOR);
+  var hip=[126,101.6],th=-2*PI*p,c=[hip[0]+14,hip[1]-42],R=10,cam=camFit(70,46,166,FLOOR);
   var legs=[0,1].map(function(i){var a=th+i*PI;return {to:[c[0]+R*Math.cos(a),c[1]+R*Math.sin(a)],side:-1,an:18*Math.sin(a)};});
   var g=fig({hip:hip,tor:-90,legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
   var vc=cam.p(c);
-  return cam.g(floor(109,60,180)+g.svg)+arcA(vc[0],vc[1],R*cam.s+14,-40,60);
+  return cam.g(floor(111,60,180)+g.svg)+arcA(vc[0],vc[1],R*cam.s+14,-40,60);
 }};
 /* 25. Растяжка икры с полотенцем: сидя, полотенце на передней части стопы, тянем на себя */
 A.stowel={T:4,focus:"calf",f:function(p){
@@ -835,8 +842,8 @@ A.swall={T:4,focus:"calf",f:function(p){
 A.rags={T:14,f:function(p){ // 4 с встряхиваем, затем один медленный вдох на 4 и выдох на 6
   var SH=4/14,shake=p<SH,w=2*PI*p*45,j=shake?1:0,cam=camFit(70,40,166,FLOOR);
   var legs=[{th:180+j*4*Math.sin(w),kn:j*(6+5*Math.sin(w*1.3)),an:j*28*Math.sin(w+1)},{th:178-j*4*Math.sin(w+0.7),kn:j*(6+5*Math.sin(w*1.1+1)),an:j*28*Math.sin(w+2)}];
-  var g=fig({hip:[124,103],tor:-90,far:[2,0],legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
-  var s=cam.g(floor(109,60,180)+g.svg),ft=cam.p(g.legs[0].toe);
+  var g=fig({hip:[124,101.6],tor:-90,far:[2,0],legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
+  var s=cam.g(floor(111,60,180)+g.svg),ft=cam.p(g.legs[0].toe);
   if(shake)s+=ln([ft[0]-18,ft[1]-2],[ft[0]-10,ft[1]-4],"ac")+ln([ft[0]-18,ft[1]+6],[ft[0]-10,ft[1]+6],"ac")+ln([ft[0]+10,ft[1]-4],[ft[0]+18,ft[1]-2],"ac")+ln([ft[0]+10,ft[1]+6],[ft[0]+18,ft[1]+6],"ac");
   var b=(p-SH)/(1-SH);
   if(!shake){var inh=b<0.4?sm(b/0.4):1-sm((b-0.4)/0.6),bc=cam.p([104,95]);s+=ci(bc,4+6*inh,"acd");}
