@@ -342,3 +342,32 @@ for (const [w, h] of [[360, 800], [390, 844], [430, 932]]) {
     await ctx.close();
   });
 }
+
+test("схемы: голова лёжа, подъём на носки, «Медвежонок» без лишних меток, умеренный свод в «Короткой стопе»", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 520, height: 400 } });
+  const { page, errors } = await openApp(ctx);
+  const r = await page.evaluate((PH) => {
+    const host = document.createElement("div"); host.className = "anim"; host.style.cssText = "position:fixed;left:0;top:0;width:480px";
+    host.innerHTML = '<svg viewBox="' + AN.VIEWBOX + '"></svg>'; document.body.appendChild(host);
+    const svg = host.firstChild, out = [];
+    function draw(k, p) { AN.setFocus(AN[k].focus); AN.seed(3); svg.innerHTML = AN.sketchify(AN[k].f(p)); return svg.getBoundingClientRect(); }
+    function bb(el, R) { const b = el.getBoundingClientRect(), s = R.width / 240; return { x0: (b.left - R.left) / s, y0: (b.top - R.top) / s, x1: (b.right - R.left) / s, y1: (b.bottom - R.top) / s }; }
+    PH.forEach(p => {
+      for (const k of ["bike", "rags"]) {            // лицо к потолку, ничего не уходит под пол
+        const R = draw(k, p), fl = bb(svg.querySelector("line.fl"), R).y0, iris = svg.querySelector(".iris");
+        if (!iris || bb(iris, R).y1 > fl - 9) out.push(`${k} ${p}: лицо не смотрит вверх`);
+        svg.querySelectorAll("path.sk,path.skf").forEach(el => { if (!el.closest("[clip-path]") && bb(el, R).y1 > fl + 1) out.push(`${k} ${p}: контур ниже пола (${el.getAttribute("class")} ${bb(el, R).y1.toFixed(1)} > ${fl.toFixed(1)})`); });
+      }
+      { const R = draw("raise", p), fl = 142;         // передний отдел стоп всегда на полу
+        const low = Math.max(...[...svg.querySelectorAll("path.sk")].map(el => bb(el, R)).filter(b => b.x0 > 95 && b.x1 < 140).map(b => b.y1));
+        if (Math.abs(low - fl) > 1.2) out.push(`raise ${p}: стопы оторваны от пола (низ ${low.toFixed(1)}, пол ${fl})`); }
+      { draw("bear", p); if (svg.querySelector("circle.acf")) out.push(`bear ${p}: лишняя оранжевая точка`); }
+      { const R = draw("shortfoot", p), gap = svg.querySelector("path.gap");
+        if (gap) { const b = bb(gap, R); if ((b.y1 - b.y0) / (b.x1 - b.x0) > 0.2) out.push(`shortfoot ${p}: слишком высокий свод (${((b.y1 - b.y0) / (b.x1 - b.x0)).toFixed(2)})`); } }
+    });
+    host.remove(); return out;
+  }, PHASES);
+  assert.deepEqual(r, []);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
