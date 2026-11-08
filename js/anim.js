@@ -765,16 +765,21 @@ function printToes(cx,cy,mir,cls){
 }
 
 A.shortfoot={T:4,f:function(p){
-  var u=sm(Math.min(1,ease(p)*1.3)),sc=1.55,x=14,y=96,o={sc:sc,arch:1.7*u,s:0.45*u,shin:40};
-  var bx=40-7*o.s-11,ah=3+6*o.arch+2.5*o.s,ax=x+0.45*bx*sc,ballX=x+bx*sc,tipX=x+(bx+11)*sc;
+  // Reference movement: keep heel and toes in contact, shorten the foot gently
+  // without clawing the toes. Diagram is schematic, not a clinical measurement.
+  var u=sm(Math.min(1,ease(p)*1.3)),sc=1.55,x=14,y=96;
+  var o={sc:sc,arch:1.7*u,s:0.45*u,shin:40};
+  var bx=40-7*o.s-11,ah=3+6*o.arch+2.5*o.s;
+  var ax=x+0.45*bx*sc,ballX=x+bx*sc,tipX=x+(bx+11)*sc;
   var s=ln([2,y+1],[132,y+1],"fl");
-  s+=footSide(x,y,{sc:sc,shin:40}).replace(/class="ft[nd]?"/g,'class="gh"');                           // пунктир: стопа расслаблена
-  s+='<g transform="translate('+x+" "+y+") scale("+sc+')"><path d="M0 0Q'+f1(0.45*bx)+" "+f1(-2*ah)+" "+f1(bx)+' 0Z" class="gap"/></g>'+footSide(x,y,o);
-  s+='<g opacity="'+f1(0.25+0.75*u)+'">'+arrow([ax,y-1],[ax,y-4-ah*sc*0.85])+ln([ballX+2,y+5],[tipX,y+5],"ac")+arrow([ballX+6,y+12],[ballX-12,y+12])+"</g>";
+  s+=footSide(x,y,{sc:sc,shin:40}).replace(/class="ft[nd]?"/g,'class="gh"');
+  s+='<g transform="translate('+x+" "+y+") scale("+sc+')"><path d="M0 0Q'+f1(0.45*bx)+" "+f1(-2*ah)+" "+f1(bx)+' 0Z" class="gap"/></g>';
+  s+=footSide(x,y,o);
+  // Both support points stay grounded; only the arch and forefoot approach change.
+  s+=ci([x,y],2.4,"acf")+ci([tipX,y],2.4,"acf");
+  s+='<g opacity="'+f1(0.25+0.75*u)+'">'+arrow([ax,y-1],[ax,y-4-ah*sc*0.85])+arrow([ballX+6,y+12],[ballX-12,y+12])+"</g>";
   s+=tx(3,y+21,"свод вверх",u>0.5?"capa":"cap","start")+tx(116,y+21,"пальцы на полу","cap","end");
   s+=divider();
-  // This is a schematic plantar view, not a diagnostic footprint or a claim
-  // that a particular arch shape must appear during the exercise.
   s+=tx(182,10,"схема опоры");
   s+='<path d="'+printPath(182,72,u,0)+'" class="solea"/>'+printToes(182,72,0,"solea");
   s+=tx(182,116,u>0.5?"свод активирован":"стопа расслаблена",u>0.5?"capa":"cap");
