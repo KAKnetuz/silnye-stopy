@@ -256,7 +256,13 @@ var SK_CLS={fsd:1,ft:1,ftn:1,pr:1,prf:1,wall:1,ball:1,twl:1,pap:1,solea:1,ac:1,a
 function sketchify(svg){
   return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\b([^>]*?)class="([a-z]+)"([^>]*)\/>/g,function(all,tag,a,c,b){
     if(!SK_CLS[c])return all;
-    return all+'<'+tag+a+'class="'+c+' sk2d" transform="translate('+f1(jit(.7))+' '+f1(jit(.7))+')"'+b.replace(/transform="[^"]*"/,"")+'/>';
+    // Preserve the original transform: removing it displaces mirrored or rotated feet.
+    // Compose the pencil offset with the element's own geometry transform.
+    var attrs=a+b,match=attrs.match(/transform="([^"]*)"/);
+    var offset="translate("+f1(jit(.45))+" "+f1(jit(.45))+")";
+    var composed=match?offset+" "+match[1]:offset;
+    attrs=attrs.replace(/\\s*transform="[^"]*"/,"");
+    return all+'<'+tag+attrs.replace(/class="'+c+'"/,'class="'+c+' sk2d"')+' transform="'+composed+'"/>';
   });
 }
 
@@ -349,6 +355,8 @@ function akFront(o){
 function P2(x,y){return f1(x)+" "+f1(y);}
 function footSideSk(x,y,o){
   var sc=o.sc||1.6,s=o.s||0,arch=o.arch||0,cu=o.curl||0,SL=o.shin||44;
+  // Limit decorative exaggeration so the toe and arch geometry remains plausible.
+  s=Math.max(-1,Math.min(1,s));arch=Math.max(-1,Math.min(1.8,arch));cu=Math.max(0,Math.min(1,cu));
   var Lf=40-7*s,bx=Lf-11,bl=4*cu,ah=3+6*arch+2.5*s,tip=bx+11-4*cu;
   // плавный силуэт: подошва повторяет дугу свода (как у выемки под сводом в сцене)
   var pts=[[1,.2],[.231*bx,-.75*ah],[.475*bx,-ah],[.731*bx,-.75*ah],[bx,-bl],[bx+4.5,-bl*.5+.1],[tip-2.6,.2],[tip+.9,-1.9],[tip-.8,-4.5],
