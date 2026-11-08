@@ -124,7 +124,7 @@ function skMuscle(a,b,P,side,t0,t1,inset){ // рабочая мышца: ора�
 var THF=[[0,5.9],[.3,5.5],[.8,3.9],[1,3.5]],THB=[[0,6.8],[.22,6.5],[.8,3.9],[1,3.4]];
 var SHF=[[0,3.5],[.4,2.9],[1,2]],SHB=[[0,3.4],[.2,4.4],[.45,3.7],[.8,2.1],[1,2.2]];
 var THO=[[0,6.6],[.3,5.8],[1,3.7]],THI=[[0,4.4],[.25,4.8],[1,3.5]],SHO=[[0,3.6],[.22,4.2],[.55,3.1],[1,2]],SHI=[[0,3.6],[.2,4.7],[.5,3.3],[1,2.1]];
-var UA=[[0,2.8],[1,2.1]],FA=[[0,2.3],[.3,2.5],[1,1.5]],NECK=[[0,2.1],[1,1.9]];
+var UA=[[0,2.3],[.5,2.1],[1,1.8]],FA=[[0,1.8],[.35,1.9],[1,1.3]],NECK=[[0,2.1],[1,1.9]];
 function legPts(hip,L){ // L: {th: угол бедра, kn: сгиб колена, an: угол стопы} или {to: точка лодыжки, side}
   var knee,ank;
   if(L.to){var q=ik(hip,L.to,24,24,L.side||-1);knee=q[0];ank=q[1];}
@@ -143,12 +143,24 @@ function footShape(L){ // стопа персонажа сбоку: пятка, 
   if((L.ank[0]-L.heel[0])*u[0]+(L.ank[1]-L.heel[1])*u[1]<0)u=[-u[0],-u[1]];
   return function(x,y){return [L.heel[0]+f[0]*x*.92+u[0]*y,L.heel[1]+f[1]*x*.92+u[1]*y];};
 }
+/* одежда персонажа (по утверждённому образу «Медвежонка»): леггинсы до середины икры с оранжевой полосой, кроп-топ */
+function clothShape(pts,far,fc){return path(smoothPath(pts,true),fc||"cloth")+path(smoothPath(jpts(pts,.45),true),"sk"+(far?" skfar":""))+path(smoothPath(jpts(pts,.7),true),"sk sk2"+(far?" skfar":""));}
+function clothLeg(h,k,a,TA,TB,SA,SB,far,ss){ // ss — где полоса: 0 — по середине (вид сбоку), ±1 — по краю (вид спереди)
+  var C=[k[0]+(a[0]-k[0])*.62,k[1]+(a[1]-k[1])*.62],fc=far?" skfar":"";
+  var s=skShape(limbPts(k,a,SA,SB),far)+clothShape(limbPts(h,k,TA,TB),far)+clothShape(limbPts(k,C,sub(SA,.62),sub(SB,.62)),far);
+  var d=nrm([a[0]-k[0],a[1]-k[1]]),n=[-d[1],d[0]],wa=prof(SA,.62),wb=prof(SB,.62);
+  s+=path(smoothPath(jpts([[C[0]+n[0]*wa*.98,C[1]+n[1]*wa*.98],[C[0]+d[0],C[1]+d[1]],[C[0]-n[0]*wb*.98,C[1]-n[1]*wb*.98]],.1),false),"sk"+fc);   // край леггинсов
+  if(!far&&ss!==undefined){
+    var pt=function(a0,b0,PA,PB,t){var dd=nrm([b0[0]-a0[0],b0[1]-a0[1]]),nn=[-dd[1],dd[0]],c=[a0[0]+(b0[0]-a0[0])*t,a0[1]+(b0[1]-a0[1])*t],w=(ss>=0?prof(PA,t):prof(PB,t))*ss*.82;return [c[0]+nn[0]*w,c[1]+nn[1]*w];};
+    s+=path(smoothPath([pt(h,k,TA,TB,.1),pt(h,k,TA,TB,.6),pt(k,a,SA,SB,.06),pt(k,a,SA,SB,.58)],false),"stripe");}
+  return s;
+}
 function akLeg(h,L,far){
   var td=[L.toe[0]-L.heel[0],L.toe[1]-L.heel[1]],sS=sideOf(L.knee,L.ank,td);
   var shv=[L.ank[0]-L.knee[0],L.ank[1]-L.knee[1]],dt=nrm([L.knee[0]-h[0],L.knee[1]-h[1]]),bend=-dt[1]*shv[0]+dt[0]*shv[1];
   var sT=Math.abs(bend)>3?(bend>0?-1:1):sideOf(h,L.knee,td);
   var TA=sT>0?THF:THB,TB=sT>0?THB:THF,SA=sS>0?SHF:SHB,SB=sS>0?SHB:SHF;
-  var s=skLimb(h,L.knee,TA,TB,far)+skLimb(L.knee,L.ank,SA,SB,far),P=footShape(L);
+  var s=clothLeg(h,L.knee,L.ank,TA,TB,SA,SB,far,0),P=footShape(L);
   s+=skShape([P(-1.4,2.2),P(-.6,0),P(2.2,-.3),P(5,1),P(9,-.2),P(12.8,.4),P(13,1.4),P(11,2.3),P(7,3.6),P(3.6,5.6),P(.4,5.8)],far);
   if(!far){
     s+=skJoint(L.knee,3.5)+skJoint(L.ank,2.1);
@@ -173,7 +185,8 @@ function akHeadSide(c,up,face){ // голова сбоку: череп, остр
   function P(x,y){return [c[0]+n[0]*x+up[0]*y,c[1]+n[1]*x+up[1]*y];}
   var s=skShape([P(0,7),P(4.6,5.4),P(6.2,1.4),P(5.8,-1.6),P(4.2,-5.4),P(2.4,-7.4),P(.4,-6.4),P(-2.6,-4.6),P(-5.6,-1.4),P(-6.2,2.4),P(-4.4,5.8)],false);
   s+=path(smoothPath(jpts([P(-1,-6.2),P(-.8,-1),P(-1.6,3.4)],.2),false),"skc");
-  s+=path(smoothPath(jpts([P(6.2,-.2),P(3,-.6),P(-.4,-.4)],.2),false),"skc");
+  var e1=P(5.3,.9),e2=P(4,2),e3=P(2.6,1.1),ir=P(4.2,.1),b1=P(5.4,3),b2=P(4,3.8),b3=P(2.5,3.2),m1=P(5.6,-3.4),m2=P(4.6,-3.9);
+  s+=path("M"+f1(e1[0])+" "+f1(e1[1])+"Q"+f1(e2[0])+" "+f1(e2[1])+" "+f1(e3[0])+" "+f1(e3[1]),"eye")+ci(ir,.75,"iris")+path("M"+f1(b1[0])+" "+f1(b1[1])+"Q"+f1(b2[0])+" "+f1(b2[1])+" "+f1(b3[0])+" "+f1(b3[1]),"skc")+ln(m1,m2,"skc");   // глаз, бровь, губы
   s+=path(smoothPath(jpts([P(-5.6,2),P(-1,6.4),P(3.4,6.6),P(6.4,3.2),P(6.6,.8),P(4.6,2.6),P(2.4,3.4)],.3),false),"sk sk2");
   s+=path(smoothPath(jpts([P(-5.4,3.4),P(-9,2.2),P(-10.6,-3),P(-9.6,-9),P(-7.6,-13)],.35),false),"sk");
   s+=path(smoothPath(jpts([P(-5.6,2),P(-7.6,-1.6),P(-7.8,-7),P(-6.4,-11.4)],.35),false),"sk sk2");
@@ -187,8 +200,10 @@ function akSide(hip,hipF,sh,shF,up,legs,arms,face){
   var tf=sideOf(hip,nb,[face,0])>0,TF=[[0,6.4],[.32,4.4],[.68,5.4],[1,4.6]],TB=[[0,7],[.3,4.6],[.68,5.1],[1,4.4]];
   s+=skShape(limbPts(mv(hip,up,-2.5),nb,tf?TF:TB,tf?TB:TF),false);
   s+=path(smoothPath(jpts([hip,mv(hip,up,14),nb].map(function(p,i){return i===1?[p[0]-n[0]*1.6*face,p[1]-n[1]*1.6*face]:p;}),.2),false),"skc");
+  s+=clothShape(limbPts(mv(hip,up,-3),mv(hip,up,6.4),[[0,6.9],[1,4.9]],[[0,7.3],[1,4.9]]),false);                                          // пояс леггинсов
+  s+=clothShape(limbPts(mv(hip,up,18.2),mv(hip,up,30.4),tf?[[0,5],[.5,5.7],[1,4.6]]:[[0,4.6],[1,4.4]],tf?[[0,4.6],[1,4.4]]:[[0,5],[.5,5.7],[1,4.6]]),false,"top"); // кроп-топ
   s+=skShape(limbPts(nb,mv(hip,up,34.5),NECK,NECK),false);
-  if(legs[0])s+=akLeg(hip,legs[0],false)+skJoint(hip,5);
+  if(legs[0])s+=akLeg(hip,legs[0],false);
   if(arms[0])s+=akArm(sh,arms[0],false);
   return s+akHeadSide(hd,up,face);
 }
@@ -259,21 +274,23 @@ function akFront(o){
   s+=skShape([[hx-9,hy-29.5],[hx-7.6,hy-20],[hx-5.4,hy-12],[hx-8.6,hy-3],[hx-9.2,hy+2],[hx,hy+4.5],[hx+9.2,hy+2],[hx+8.6,hy-3],[hx+5.4,hy-12],[hx+7.6,hy-20],[hx+9,hy-29.5],[hx,hy-31]],false);
   s+=path(smoothPath(jpts([[hx,hy-31],[hx+.5,hy-14],[hx,hy+3]],.2),false),"skc");
   if(o.back)s+=path(smoothPath(jpts([[hx-7,hy-25],[hx-4,hy-19],[hx-1.5,hy-21]],.2),false),"skc")+path(smoothPath(jpts([[hx+7,hy-25],[hx+4,hy-19],[hx+1.5,hy-21]],.2),false),"skc");
-  else s+=path(smoothPath(jpts(ellPts([hx,hy-12],5.4,1.4,0,12),.2),true),"skc");
-  s+=path(smoothPath(jpts(ellPts([hx,hy-1.5],9,2,0,12),.2),true),"skc");
+  else s+=ci([hx,hy-11],.5,"skj");
+  s+=clothShape([[hx-9,hy-29.5],[hx-7.8,hy-23],[hx-6.6,hy-19.4],[hx,hy-18.8],[hx+6.6,hy-19.6],[hx+7.8,hy-23],[hx+9,hy-29.5],[hx+4,hy-28],[hx,hy-(o.back?29:26)],[hx-4,hy-28]],false,"top");   // кроп-топ
   s+=skShape(limbPts([hx,hy-30],[hx,hy-35],NECK,NECK),false);
   for(i=0;i<2;i++){var sd=i?1:-1,L=o.legs[i],outA=sd<0,TA=outA?THO:THI,TB=outA?THI:THO,SA=outA?SHO:SHI,SB=outA?SHI:SHO,hp=J.hips[i],k=J.knees[i],a=J.anks[i];
     if(L.tilt){var m=-sd;a=rotP(a,[a[0]-m*5,a[1]+6.9],-m*L.tilt);}
-    if(L.tuck){s+=skLimb(hp,k,TA,TB,false)+skLimb(k,a,SA,SB,false)+skJoint(k,3.4);
+    if(L.tuck){s+=clothLeg(hp,k,a,TA,TB,SA,SB,false,outA?1:-1)+skJoint(k,3.4);
       s+=skShape(ellPts([a[0]-sd*1.5,a[1]+4.2],2.6,4.6,-sd*.35,10),false);continue;}
-    s+=skLimb(hp,k,TA,TB,false)+skLimb(k,a,SA,SB,false);
+    s+=clothLeg(hp,k,a,TA,TB,SA,SB,false,outA?1:-1);
     s+=skJoint(k,3.4)+skContour(k,a,.35,SA,SB)+skContour(hp,k,.5,TA,TB)+skHatch(k,a,SA,SB,outA?-1:1,.15,.8);
     if(FOCUS==="calf"||FOCUS==="shin")s+=skMuscle(k,a,outA?SHI:SHO,outA?-1:1,.08,FOCUS==="calf"?.52:.72,.8);
     if(FOCUS==="quad")s+=skMuscle(hp,k,TA,1,.12,.88,.7);
     feet+=frontFoot(o.back?J.anks[i]:J.anks[i],sd,{tilt:L.tilt,rise:L.rise},o.back);}
+  var pel=[[hx-6.4,hy-6],[hx,hy-5.4],[hx+6.4,hy-6],[hx+8.8,hy-1],[hx+9.4,hy+3.6],[hx+5,hy+6.8],[hx,hy+7.8],[hx-5,hy+6.8],[hx-9.4,hy+3.6],[hx-8.8,hy-1]];
+  s+=path(smoothPath(pel,true),"cloth")+path(smoothPath(jpts([[hx-9.2,hy+4.4],[hx-8.8,hy-1],[hx-6.4,hy-6],[hx,hy-5.4],[hx+6.4,hy-6],[hx+8.8,hy-1],[hx+9.2,hy+4.4]],.3),false),"sk");  // пояс леггинсов поверх бёдер
   s+=feet;
   for(i=0;i<2;i++){var sd2=i?1:-1;s+=akArm(J.shs[i],{el:J.els[i],hand:J.hds[i]},false)+skJoint(J.shs[i],3);}
-  return {svg:s+akHeadFront([hx,hy-40.5],o.back),J:J};
+  return {svg:s+(o.back?akHeadFront([hx,hy-40.5],true):bwHead([hx-1,hy-40.6],0)),J:J};
 }
 
 /* ---------- крупные планы стопы ---------- */
@@ -322,8 +339,8 @@ function footTopSk(x,y,o){
   return s+(o.extra||"")+"</g>";
 }
 /* голень и стопа спереди; внутренняя сторона — к центру кадра (sd = −1 — левая в кадре нога). o: tilt — наружный край, lift — подъём, curl — пальцы поджаты */
-function legFrontInner(cx,sd,cu){
-  var m=sd<0?1:-1,X=function(v){return f1(cx+m*v);},I=cx+m*7.5,O=cx-m*7.5,s="";
+function legFrontInner(cx,sd,cu,op){
+  var m=sd<0?1:-1,X=function(v){return f1(cx+m*v);},I=cx+m*7.5,O=cx-m*7.5,s="";op=op||{};
   s+=path("M"+f1(O)+" 0C"+f1(O-m*3.5)+" 16 "+f1(O-m*2.5)+" 34 "+X(-5.5)+" 58L"+X(-5)+" 80L"+X(5)+" 80L"+X(5.5)+" 60C"+f1(I+m*1.5)+" 40 "+f1(I+m*5)+" 20 "+f1(I)+" 0","ftf");
   s+=path("M"+f1(O)+" 0C"+f1(O-m*3.5)+" 16 "+f1(O-m*2.5)+" 34 "+X(-5.5)+" 58L"+X(-5)+" 80","ft")+path("M"+X(5)+" 80L"+X(5.5)+" 60C"+f1(I+m*1.5)+" 40 "+f1(I+m*5)+" 20 "+f1(I)+" 0","ft");
   s+=path("M"+X(-5.6)+" 79C"+X(-6.8)+" 86 "+X(-10.2)+" 90 "+X(-9.8)+" 96.5L"+X(11.4)+" 96.5C"+X(11.8)+" 90 "+X(7.2)+" 86 "+X(5.4)+" 78Z","ft");
@@ -335,14 +352,17 @@ function legFrontInner(cx,sd,cu){
     s+=path("M"+f1(c-w)+" "+f1(top+1.6)+"Q"+f1(c-w)+" "+f1(top)+" "+f1(c)+" "+f1(top)+"Q"+f1(c+w)+" "+f1(top)+" "+f1(c+w)+" "+f1(top+1.6)+"L"+f1(c+w*.92)+" "+f1(bot-1.4)+"Q"+f1(c)+" "+f1(bot+.4)+" "+f1(c-w*.92)+" "+f1(bot-1.4)+"Z","ft");
     if(!cu)s+=path("M"+f1(c-w*.55)+" "+f1(top+2.4)+"Q"+f1(c)+" "+f1(top+1.2)+" "+f1(c+w*.55)+" "+f1(top+2.4)+"L"+f1(c+w*.5)+" "+f1(top+4.2)+"Q"+f1(c)+" "+f1(top+4.8)+" "+f1(c-w*.5)+" "+f1(top+4.2)+"Z","fsd");
   });
-  if(FOCUS==="shin")s+=path("M"+X(-2.5)+" 8C"+X(-6.5)+" 26 "+X(-5)+" 48 "+X(-2.5)+" 66C"+X(0)+" 48 "+X(.5)+" 26 "+X(-2.5)+" 8Z","mhl");
+  if(FOCUS==="shin"&&!op.cuff)s+=path("M"+X(-2.5)+" 8C"+X(-6.5)+" 26 "+X(-5)+" 48 "+X(-2.5)+" 66C"+X(0)+" 48 "+X(.5)+" 26 "+X(-2.5)+" 8Z","mhl");
+  if(op.cuff)s+=path("M"+f1(O-m*1)+" -2C"+f1(O-m*3.6)+" 16 "+f1(O-m*2.9)+" 30 "+f1(O-m*2.1)+" 40Q"+f1(cx)+" 42.6 "+f1(I+m*3.3)+" 39C"+f1(I+m*4.6)+" 24 "+f1(I+m*3.8)+" 10 "+f1(I+m*1)+" -2Z","cloth")+
+     path("M"+f1(O-m*2.1)+" 40Q"+f1(cx)+" 42.6 "+f1(I+m*3.3)+" 39","sk")+path("M"+f1(O-m*2.6)+" -2C"+f1(O-m*5)+" 16 "+f1(O-m*4.2)+" 30 "+f1(O-m*3.4)+" 40","stripe");
+  if(op.edge){var e="M"+X(-5.6)+" 80C"+X(-6.8)+" 86 "+X(-10.2)+" 90 "+X(-9.8)+" 96.5";s+=path(e,"edgeg")+path(e,"edgel");}
   return s;
 }
 function legFront(cx,sd,o){ // поворот вокруг наружного края стопы (опора на ребро), пол — y = 102
   var h=o.lift||0,t=(o.tilt||0)*(sd<0?-1:1),px=cx+sd*12,s="";
   var inner=rotP([cx-sd*12,102],[px,102],t),show=Math.abs(t)>1&&h<0.5;
   if(show)s+=path("M"+f1(px)+" 102L"+f1(inner[0])+" "+f1(inner[1])+"L"+f1(inner[0])+" 102Z","gap");
-  s+='<g transform="rotate('+f1(t)+" "+f1(px)+' 102) translate(0 '+f1(-h)+')">'+legFrontInner(cx,sd,o.curl)+"</g>";
+  s+='<g transform="rotate('+f1(t)+" "+f1(px)+' 102) translate(0 '+f1(-h)+')">'+legFrontInner(cx,sd,o.curl,o)+"</g>";
   if(show)s+=dot([px,102]);
   return s;
 }
@@ -356,7 +376,10 @@ function lieEndBody(spread){
   s+=skShape(ellPts([c,21],7.6,8.6,0,16),false)+path(smoothPath(jpts([[c-5,24],[c,27.6],[c+5,24]],.2),false),"skc");
   s+=skShape(limbPts([c,28],[c,36],[[0,3],[1,3.4]],[[0,3],[1,3.4]]),false);
   s+=skShape([[c-22,40],[c-9,35.5],[c,35],[c+9,35.5],[c+22,40],[c+18,52],[c+14,62],[c+17,72],[c,75],[c-17,72],[c-14,62],[c-18,52]],false);  // корпус
-  s+=path(smoothPath(jpts([[c,37],[c+.5,55],[c,73]],.2),false),"skc")+path(smoothPath(jpts(ellPts([c,63],9,1.6,0,12),.2),true),"skc");
+  s+=clothShape([[c-22,40],[c-9,35.5],[c-4,38],[c,40],[c+4,38],[c+9,35.5],[c+22,40],[c+18.6,50],[c,52],[c-18.6,50]],false,"top");          // кроп-топ
+  s+=ci([c,60],.6,"skj")+path(smoothPath([[c-14.6,64.6],[c-17,72],[c,75],[c+17,72],[c+14.6,64.6],[c,66]],true),"cloth")+path(smoothPath(jpts([[c-17,72],[c-14.6,64.6],[c,66],[c+14.6,64.6],[c+17,72]],.25),false),"sk");   // пояс леггинсов
+  [-1,1].forEach(function(sd){var e=[c+sd*3.4,18.6];s+=path("M"+f1(e[0]-1.4)+" "+f1(e[1])+"Q"+f1(e[0])+" "+f1(e[1]-.9)+" "+f1(e[0]+1.4)+" "+f1(e[1]),"eye")+ci([e[0],e[1]+.8],.6,"iris");});
+  s+=path("M"+f1(c-1.4)+" 24.6Q"+f1(c)+" 25.4 "+f1(c+1.4)+" 24.6","skc");                                                                          // лицо смотрит в потолок
   [-1,1].forEach(function(sd){s+=skLimb([c+sd*21,41],[c+sd*(26+spread*4),58],[[0,3.6],[1,3]],[[0,3.6],[1,3]],false)+skLimb([c+sd*(26+spread*4),58],[c+sd*(28+spread*6),76],[[0,3],[1,2.6]],[[0,3],[1,2.6]],false)+
     skShape(ellPts([c+sd*(28.5+spread*6),80],2.6,4,0,10),false);});
   return s;
@@ -365,7 +388,9 @@ function lieEnd(o){
   var c=120,s=lieEndBody(0),feet="";
   [-1,1].forEach(function(sd,i){
     var F=o.feet[i],heel=[c+sd*21,134],hip=[c+sd*8,73];
-    s+=skLimb(hip,[c+sd*20,118],[[0,8.4],[.45,7.6],[1,6.4]],[[0,8.4],[.45,7.6],[1,6.4]],false);   // нога уходит от зрителя
+    var LP=[[0,8.4],[.45,7.6],[1,6.4]],kn=[c+sd*20,118],cf=[hip[0]+(kn[0]-hip[0])*.8,hip[1]+(kn[1]-hip[1])*.8];
+    s+=skLimb(hip,kn,LP,LP,false)+clothShape(limbPts(hip,cf,sub(LP,.8),sub(LP,.8)),false);                                     // нога в леггинсах уходит от зрителя
+    s+=path(smoothPath([[hip[0]-sd*6.6,hip[1]+2],[cf[0]-sd*5.6,cf[1]]],false),"stripe");
     var rot=-sd*(F.rot||0),inv=F.inv||0,sx=Math.cos(r(68*inv)),cls=o.sole?"solea":"ft";
     feet+=footTopSk(heel[0]-sd*inv*3,heel[1],{sc:1.1,rot:rot-sd*10*inv,mir:sd>0?1:0,sx:sx,cls:cls,sole:1});
     if(inv>.05){ // ребро стопы, которое становится видно при развороте подошвы
@@ -434,12 +459,101 @@ A.penguin={T:1.3,focus:"shin",f:function(p){
 
 /* 5. Медвежонок: спереди, шаг на наружных краях стоп; лупа — те же голени крупно */
 var HANDS_ON_HIPS=[{a1:40,a2:-35},{a1:40,a2:-35}];
+/* 5. Медвежонок: героиня в три четверти идёт на наружных краях стоп, руки на поясе; лупа спереди показывает те же стопы в той же фазе.
+   Отдельный риг этой сцены (координаты рига: таз в (0,0), пол y = 53), по художественному эталону: топ, леггинсы с полосой, хвост. */
+var BW={f:[.62,.3],l:[.46,-.18],w:[.5,.3],a:8,lift:6,roll:14};   // f — куда смотрит стопа, w — ось шага (к зрителю), l — «влево» для героини               // ось шага (вперёд — к зрителю вправо), ось «влево», полшага, подъём, крен стопы
+function bwGait(p,i){ // фаза ноги: опора (стопа едет назад) → перенос (стопа поднимается и выносится вперёд)
+  var s=(p+i/2)%1;
+  if(s<0.5)return {u:BW.a*(1-4*s),lift:0,stance:1,k:s/0.5};
+  var k=(s-0.5)/0.5;return {u:-BW.a+2*BW.a*sm(k),lift:BW.lift*Math.sin(PI*k),stance:0,k:k};
+}
+function bwP(o,x,z,y){return [o[0]+BW.f[0]*x+BW.l[0]*z,o[1]+BW.f[1]*x+BW.l[1]*z-y];}  // точка стопы (x вперёд, z влево, y вверх) → кадр
+function bwFoot(ank,right,roll,curl){ // стопа почти в профиль (три четверти), стоит на наружном крае: внутренний край приподнят на roll°
+  var base=[ank[0],ank[1]+6.6],cu=curl||0,F=[.9,.24],Lw=[.46,-.18],zi=right?5.4:-5.4,lift=Math.abs(zi)*Math.sin(r(roll));
+  function P(x,y,z){z=z||0;return [base[0]+F[0]*x+Lw[0]*z,base[1]+F[1]*x+Lw[1]*z-y-(z?lift*Math.abs(z)/Math.abs(zi):0)];}
+  var tip=13.4-1.4*cu,s="";
+  s+=path(smoothPath([P(1.6,0),P(9.4,0),P(6.4,0,zi*.9)],true),"gap");                                                               // просвет под приподнятым внутренним краем
+  var out=[P(-3.2,1.6),P(-2.4,0),P(3,0),P(9,0),P(11.6,.15),P(tip,.8+cu*.8),P(tip+.1,1.8+cu),P(tip-1.3,2.5+cu*.6),P(9.4,2.9),P(6,3.9),P(2.8,5.6),P(1,7.6),P(-1.4,7.8),P(-3.2,4.6)];
+  s+=skShape(out,false);
+  for(var k=0;k<3;k++){var x=tip-1.6-1.9*k;s+=path(smoothPath([P(x-.8,2.4+cu*.4-.2*k),P(x+.4,1.2+cu*.4),P(x,.3+cu*.3)],false),"fsd");}   // пальцы
+  s+=path(smoothPath(jpts([P(1.6,6.2),P(5.4,4),P(10.2,2.5)],.12),false),"skc");                                                         // сухожилие подъёма
+  s+=path(smoothPath([P(-.6,5.6),P(-1.6,4.3),P(-.4,3.2)],false),"skc");                                                                  // лодыжка
+  var e=[P(-2.6,0),P(3,0),P(9,0),P(11.6,.2)];
+  s+=path(smoothPath(e,false),"edgeg")+path(smoothPath(e,false),"edgel");                                                                // наружный край — опора
+  return s;
+}
+var BW_TO=[[0,4.8],[.25,4.9],[.7,3.9],[1,3.1]],BW_TI=[[0,3.8],[.2,4.2],[.7,3.4],[1,3]],BW_SO=[[0,3],[.25,3.5],[.6,2.6],[1,1.8]],BW_SI=[[0,3],[.2,3.7],[.55,2.8],[1,1.9]];
+function sub(P,k){var o=[];for(var i=0;i<=6;i++){var t=i/6;o.push([t,prof(P,t*k)]);}return o;}
+function bwIK(hip,ank3){ // колено в 3D: шаг идёт к зрителю (ось z), колено сгибается вперёд; затем проекция в кадр
+  var d=[ank3[0]-hip[0],ank3[1]-hip[1],ank3[2]],D=Math.hypot(d[0],d[1],d[2]),L1=27,L2=26,DD=Math.min(D,L1+L2-.05),e=[d[0]/D,d[1]/D,d[2]/D];
+  var v=[-e[2]*e[0],-e[2]*e[1],1-e[2]*e[2]],vl=Math.hypot(v[0],v[1],v[2])||1;v=[v[0]/vl,v[1]/vl,v[2]/vl];
+  var a=(L1*L1-L2*L2+DD*DD)/(2*DD),h=Math.sqrt(Math.max(0,L1*L1-a*a)),k=[hip[0]+e[0]*a+v[0]*h,hip[1]+e[1]*a+v[1]*h,e[2]*a+v[2]*h];
+  function pr(q){return [q[0]+BW.w[0]*q[2],q[1]+BW.w[1]*q[2]];}
+  var A3=[hip[0]+e[0]*DD,hip[1]+e[1]*DD,e[2]*DD];
+  return [pr(k),pr(A3)];
+}
+function bwLeg(hip,ank3,right,g){
+  var q=bwIK(hip,ank3),knee=q[0],a=q[1],TA=right?BW_TO:BW_TI,TB=right?BW_TI:BW_TO,SA=right?BW_SO:BW_SI,SB=right?BW_SI:BW_SO,C=[knee[0]+(a[0]-knee[0])*.62,knee[1]+(a[1]-knee[1])*.62];
+  var s=skShape(limbPts(knee,a,SA,SB),false);                                                                       // голень (кожа)
+  var ht=[hip[0]+(knee[0]-hip[0])*.06,hip[1]+(knee[1]-hip[1])*.06];
+  s+=skShapeF(limbPts(ht,knee,TA,TB),"cloth")+skShapeF(limbPts(knee,C,sub(SA,.62),sub(SB,.62)),"cloth");          // леггинсы до середины икры
+  s+=path(smoothPath(jpts([[C[0]-prof(SA,.62)*.98,C[1]+.3],[C[0],C[1]+1.2],[C[0]+prof(SB,.62)*.98,C[1]+.2]],.1),false),"sk");   // край леггинсов
+  var d=nrm([knee[0]-hip[0],knee[1]-hip[1]]),n=[-d[1],d[0]],d2=nrm([C[0]-knee[0],C[1]-knee[1]]),n2=[-d2[1],d2[0]],w1=right?1:-1;
+  s+=path(smoothPath([[hip[0]+n[0]*w1*4.4,hip[1]+n[1]*w1*4.4],[knee[0]+n[0]*w1*3.4+n2[0]*w1*.2,knee[1]+n[1]*w1*3.4],[C[0]+n2[0]*w1*prof(SA,.62)*.8,C[1]+n2[1]*w1*prof(SA,.62)*.8]],false),"stripe"); // полоса по наружному шву
+  s+=skContour(knee,a,.78,SA,SB)+skJoint(knee,3);
+  if(FOCUS==="shin")s+=skMuscle(knee,a,right?BW_SO:BW_SI,right?1:-1,.08,.58,.62);
+  return {svg:s+bwFoot(a,right,BW.roll,.35),knee:knee,ank:a};
+}
+function bwArm(sh,el,hd){ // тонкая рука: плечо и предплечье; кисть рисуется отдельно поверх пояса
+  return skShape(limbPts(sh,el,[[0,2.3],[.5,2.1],[1,1.8]],[[0,2.3],[.5,2.1],[1,1.8]]),false)+skShape(ellPts(el,1.9,1.9,0,10),false)+
+         skShape(limbPts(el,hd,[[0,1.8],[.35,1.9],[1,1.3]],[[0,1.8],[.35,1.8],[1,1.3]]),false);
+}
+function bwHand(el,hd){var d=nrm([hd[0]-el[0],hd[1]-el[1]]);return skShape(ellPts([hd[0]+d[0]*1.3,hd[1]+d[1]*1.3],1.6,2.5,Math.atan2(d[1],d[0])+PI/2,10),false);}
+function skShapeF(pts,fc){return path(smoothPath(pts,true),fc)+path(smoothPath(jpts(pts,.45),true),"sk")+path(smoothPath(jpts(pts,.7),true),"sk sk2");}
+function bwHead(c,sway){
+  function P(x,y){return [c[0]+x,c[1]+y];}
+  var s="",tail=[P(-5.4,-7.6),P(-10,-9.4+sway*.3),P(-13.8,-6+sway*.6),P(-14.6,-.6+sway),P(-16.4,4.4+sway*1.3),P(-13.6,2.2+sway),P(-11.6,-2.6+sway*.6),P(-9.6,-6.4),P(-6.2,-5.4)];
+  s+=skShape(tail,false)+path(smoothPath(jpts([P(-7,-7.2),P(-11.4,-6.4+sway*.5),P(-13.4,-1+sway*.9)],.2),false),"skc");        // хвост качается в такт шагу
+  s+=skShape([P(-5.8,-1),P(-5.6,2.6),P(-3.6,5.6),P(.6,7.8),P(3.6,6.2),P(5.6,3),P(6.4,-.6),P(6,-4.6),P(3.6,-7.2),P(0,-8),P(-3.8,-7),P(-6,-4.4)],false);
+  s+=path(smoothPath(jpts([P(-7,1.6),P(-7.6,-4),P(-5.6,-8.6),P(-1,-10.6),P(4,-9.8),P(7.2,-6.4),P(7.6,-1.6)],.25),false),"sk");          // волосы
+  [[-6.4,-4.6,-4.4,-2.4],[-3.6,-8.6,-1.6,-2.2],[.2,-9.6,1.8,-3],[3.4,-9,4.6,-2.4],[6,-7,6.8,-.8]].forEach(function(b){s+=path(smoothPath(jpts([P(b[0],b[1]),P((b[0]+b[2])/2+.6,(b[1]+b[3])/2),P(b[2],b[3])],.15),false),"sk sk2");}); // чёлка
+  s+=path(smoothPath(jpts([P(-6.6,-2.6),P(-7.2,1.6),P(-6.2,5.2)],.15),false),"sk sk2")+ci(P(-5.4,-7.6),1.1,"skj");                       // прядь у лица, резинка
+  [[-2.4,.6,2.5],[3.3,.5,2.1]].forEach(function(e){s+=path("M"+f1(c[0]+e[0]-e[2]/2)+" "+f1(c[1]+e[1])+"Q"+f1(c[0]+e[0])+" "+f1(c[1]+e[1]-1.1)+" "+f1(c[0]+e[0]+e[2]/2)+" "+f1(c[1]+e[1]+.2),"eye")+
+    '<ellipse cx="'+f1(c[0]+e[0]+.2)+'" cy="'+f1(c[1]+e[1]+.9)+'" rx="'+f1(e[2]*.26)+'" ry="'+f1(e[2]*.38)+'" class="iris"/>'+
+    path("M"+f1(c[0]+e[0]-e[2]/2)+" "+f1(c[1]+e[1]-2.1)+"Q"+f1(c[0]+e[0])+" "+f1(c[1]+e[1]-2.9)+" "+f1(c[0]+e[0]+e[2]/2)+" "+f1(c[1]+e[1]-2.2),"skc");});   // глаза и брови
+  s+=path("M"+f1(c[0]+2.3)+" "+f1(c[1]+2.4)+"l.5 1.2","skc")+path("M"+f1(c[0]+.4)+" "+f1(c[1]+4.7)+"Q"+f1(c[0]+1.6)+" "+f1(c[1]+5.4)+" "+f1(c[0]+2.8)+" "+f1(c[1]+4.6),"skc");  // нос, улыбка
+  return s;
+}
+function bwFigure(p){
+  var sw=-1.3*Math.sin(2*PI*p),bob=.9*Math.cos(4*PI*p),P0=[sw,bob],s="";
+  function Q(x,y){return [P0[0]+x,P0[1]+y];}
+  var G=[bwGait(p,0),bwGait(p,1)],base=[[-6.6,59],[6.4,58.5]],legs=[];
+  for(var i=0;i<2;i++){var B=base[i],g=G[i];legs[i]={hip:i?Q(5.4,.6):Q(-5.6,0),ank:[B[0],B[1]-g.lift-6.6,g.u],g:g};}   // лодыжка в 3D: x, y, глубина
+  // сначала дальняя (левая для героини, справа в кадре) нога, затем ближняя
+  s+='<ellipse cx="1" cy="58.4" rx="20" ry="2.6" class="shd"/>';
+  var L1=bwLeg(legs[1].hip,legs[1].ank,false,legs[1].g),L0=bwLeg(legs[0].hip,legs[0].ank,true,legs[0].g);
+  s+=G[0].u<G[1].u?L0.svg+L1.svg:L1.svg+L0.svg;                       // ближняя к зрителю нога рисуется поверх
+  var shL=Q(-7.6,-27.6),shR=Q(7.4,-28),hipL=Q(-7.6,-5.4),hipR=Q(7.2,-5.4),elL=Q(-14.4,-15.6),elR=Q(14,-16);
+  s+=bwArm(shR,elR,hipR)+bwArm(shL,elL,hipL);                                                                  // руки под корпусом, кисти — поверх пояса
+  var pel=[Q(-6.6,-6),Q(-3,-5.4),Q(3,-5.6),Q(6.4,-6.2),Q(8.6,-1),Q(9.4,3.8),Q(5.4,7.4),Q(.4,8.6),Q(-4.6,7.4),Q(-9.6,3.8),Q(-8.8,-1)];
+  s+=path(smoothPath(pel,true),"cloth")+path(smoothPath(jpts([Q(-9.4,4.6),Q(-8.8,-1),Q(-6.6,-6),Q(0,-5.4),Q(6.4,-6.2),Q(8.6,-1),Q(9.2,4.6)],.35),false),"sk")+path(smoothPath(jpts([Q(.2,-3.6),Q(.5,3),Q(.3,7.4)],.15),false),"skc");   // таз леггинсов без нижнего контура   // пояс и бёдра леггинсов
+  s+=path(smoothPath(jpts([Q(-6.4,-4.2),Q(0,-3.4),Q(6.2,-4.4)],.15),false),"skc");                                                          // резинка пояса
+  s+=skShape([Q(-6.4,-6),Q(-5.6,-12),Q(-6.4,-19.4),Q(6.2,-19.8),Q(5.6,-12),Q(6.2,-6.4)],false)+ci(Q(-.2,-10),.5,"skj");                   // живот, пупок
+  s+=path(smoothPath(jpts([Q(-6.4,-21),Q(0,-20.2),Q(6.2,-21.4)],.15),false),"skc");
+  s+=skShape(limbPts(Q(.6,-29),Q(1.4,-34.2),NECK,NECK),false)+skShape([Q(-9,-28.2),Q(-5.4,-30),Q(0,-30.6),Q(5.6,-30.2),Q(8.8,-28.6),Q(7.4,-24.6),Q(-7.6,-24.2)],false);   // плечи и шея
+  s+=skShapeF([Q(-6.6,-19.2),Q(-7.6,-23.6),Q(-6.6,-28),Q(-3.6,-27.4),Q(-1,-25.4),Q(1.6,-25.4),Q(4,-27.6),Q(6.6,-28.4),Q(7.4,-23.8),Q(6.4,-19.6),Q(0,-18.8)],"top"); // топ
+  s+=bwHand(elR,hipR)+bwHand(elL,hipL);
+  s+=bwHead(Q(1.8,-40.6),1.4*Math.sin(2*PI*p+1));
+  return {svg:s,legs:[L0,L1],G:G};
+}
 A.bear={T:1.6,focus:"shin",f:function(p){
-  var w=2*PI*p,l1=Math.max(0,Math.sin(w)),l2=Math.max(0,-Math.sin(w)),cam=camFit(0,6,100,FLOOR,62),tilt=16;
-  var b=akFront({x:50,y:57,legs:[{ank:[44,102.6-6*l1],tilt:tilt},{ank:[56,102.6-6*l2],tilt:tilt}],arms:HANDS_ON_HIPS});
-  var s=cam.g(floor(FLOOR,22,78)+b.svg);
-  var inner='<g transform="translate(178 20) scale(.98) translate(-178 0)">'+floor(102,120,236)+legFront(156,-1,{tilt:tilt,lift:9*l1,curl:.5})+legFront(200,1,{tilt:tilt,lift:9*l2,curl:.5})+"</g>";
-  s+=inset("insBear",[178,82],56,inner,cam.p([50,FLOOR-2]));
+  var cam=new Cam(1.19,58,70.2),F=bwFigure(p),s=cam.g(F.svg);
+  // лупа: те же стопы спереди, в той же фазе (левая в кадре — правая нога героини)
+  var inner='<g transform="translate(180 18) scale(.98) translate(-178 0)">'+'<ellipse cx="178" cy="102.4" rx="56" ry="3" class="shd"/>'+
+    legFront(156,-1,{tilt:BW.roll,lift:1.7*F.G[0].lift,curl:.35,cuff:1,edge:1})+legFront(200,1,{tilt:BW.roll,lift:1.7*F.G[1].lift,curl:.35,cuff:1,edge:1})+"</g>";
+  var foot=F.G[0].stance?F.legs[0].ank:F.legs[1].ank;
+  s+=inset("insBear",[181,79],56,inner,cam.p([foot[0]+4,foot[1]+6]));
+  var a0=cam.p([24,56.6]);s+=arrow([a0[0],a0[1]],[a0[0]+18,a0[1]+4]);                                                                     // направление шага по полу
   return s+note("наружные края стоп",true);
 }};
 
@@ -466,7 +580,7 @@ A.claps={T:1.6,f:function(p){
   var u=sm(Math.min(1,ease(p)*1.3)),c=120,s=lieEndBody(0),hit=u>0.92;
   [-1,1].forEach(function(sd){
     var hp=[c+sd*9,74],knee=[c+sd*44,50],ank=[lerp(c+sd*24,c+sd*9,u),lerp(112,96,u)];
-    s+=skLimb(hp,knee,[[0,8],[1,5.8]],[[0,8],[1,5.8]],false)+skJoint(knee,4)+skLimb(knee,ank,[[0,5.6],[.3,6.4],[1,3.6]],[[0,5.6],[.3,6.4],[1,3.6]],false);
+    var TP=[[0,8],[1,5.8]],SP=[[0,5.6],[.3,6.4],[1,3.6]];s+=clothLeg(hp,knee,ank,TP,TP,SP,SP,false,sd<0?1:-1)+skJoint(knee,4);
     var ang=lerp(0,90,u)*(sd<0?-1:1),pts=[[-8,0],[8,0],[8.6,7],[0,9.6],[-8.6,7]].map(function(q){return rotP([ank[0]+q[0],ank[1]+q[1]+1],ank,ang);});
     s+=skShape(pts,false);
     var e1=rotP([ank[0]-7,ank[1]+9.6],ank,ang),e2=rotP([ank[0]+7,ank[1]+9.6],ank,ang);s+=ln(e1,e2,"ac");                   // подошва
@@ -524,7 +638,7 @@ A.cleanup={T:5,focus:"arch",f:function(p){
   s+=ci([30,99.5],2.6,"ball")+'<rect x="37" y="97" width="9" height="5" rx="1.2" class="ball"/>';                           // остальные предметы
   var toe=rotP([cx+1.6,102*k],pivot,ang);
   if(!carry&&drop<0&&p<0.3)s+=ci([toe[0],99.5],2.8,"ball");
-  s+='<g transform="rotate('+f1(ang)+" "+f1(pivot[0])+" "+f1(pivot[1])+') scale(1 '+f3(k)+')">'+legFrontInner(cx,-1,cu)+"</g>";
+  s+='<g transform="rotate('+f1(ang)+" "+f1(pivot[0])+" "+f1(pivot[1])+') scale(1 '+f3(k)+')">'+legFrontInner(cx,-1,cu,{cuff:1})+"</g>";
   if(carry)s+=ci([toe[0],toe[1]-1.5],2.8,"ball");
   if(drop>=0&&drop<1)s+=ci([toe[0],lerp(toe[1]-1.5,96,drop)],2.8,"ball");
   var cam=new Cam(1.3,8,9.4);
@@ -598,7 +712,7 @@ A.rollouts={T:2.8,focus:"shin",f:function(p){
   var u=ease(p),t=16*u,cam=camFit(0,6,100,FLOOR,62);
   var b=akFront({x:50,y:57,legs:[{ank:[43,102.6],tilt:t},{ank:[57,102.6],tilt:t}],arms:HANDS_ON_HIPS});
   var s=cam.g(floor(FLOOR,22,78)+b.svg);
-  var inner='<g transform="translate(178 20) scale(.98) translate(-178 0)">'+floor(102,120,236)+legFront(156,-1,{tilt:t})+legFront(200,1,{tilt:t})+"</g>";
+  var inner='<g transform="translate(178 20) scale(.98) translate(-178 0)">'+floor(102,120,236)+legFront(156,-1,{tilt:t,cuff:1,edge:1})+legFront(200,1,{tilt:t,cuff:1,edge:1})+"</g>";
   s+=inset("insRoll",[178,82],56,inner,cam.p([50,FLOOR-2]));
   return s+note(u>.5?"на наружных краях":"на всей стопе",u>.5);
 }};
