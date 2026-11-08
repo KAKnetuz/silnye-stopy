@@ -189,3 +189,19 @@ test("«Короткая стопа»: фазы движения сохраня�
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+
+test("все 27 аниме-схем имеют содержательные доступные подписи", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+  for (let i = 0; i < 27; i++) {
+    await page.locator(".exr").nth(i).click();
+    const label = await page.locator("#w-anim-svg").getAttribute("aria-label");
+    assert.ok(label && label.includes("Исходное положение:") && label.includes("Движение:"), `нет инструкции в схеме ${i + 1}`);
+    assert.ok(label.length > 65, `слишком короткая инструкция в схеме ${i + 1}`);
+    await page.click("#w-close");
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
