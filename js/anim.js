@@ -842,13 +842,17 @@ A.rags={T:14,f:function(p){ // 4 с встряхиваем, затем один 
   return s+note(shake?"трясём стопами":(b<0.4?"вдох на 4":"выдох на 6"),true);
 }};
 
-/* ---------- постобработка: второй карандашный штрих у предметов и стоп ---------- */
-var SK_CLS={ft:1,fsd:1,pr:1,prf:1,wall:1,ball:1,twl:1,pap:1,solea:1,fl:1,pin:1};
+/* ---------- упрощённая графика для мобильного экрана ----------
+   Оставляем силуэт, контуры одежды и стоп, предметы и стрелки.
+   Убираем дублирующие карандашные линии, построения, штриховку и мелкие
+   анатомические детали, которые на телефоне создают визуальный шум. */
+var HIDE_DETAIL={sk2:1,skc:1,skj:1,fsd:1,fsc:1,stripe:1,mhl:1,gh:1,skfar:0};
 function sketchify(svg){
-  return svg.replace(/<(path|circle|ellipse|rect|line)\b([^>]*?)class="([a-z]+)"([^>]*?)\/>/g,function(all,tag,a,c,b){
-    if(!SK_CLS[c])return all;
-    var attrs=a+b,m=attrs.match(/transform="([^"]*)"/),off="translate("+f1(jit(.45))+" "+f1(jit(.45))+")";
-    return all+"<"+tag+attrs.replace(/\s*transform="[^"]*"/g,"")+' class="'+c+' sk2d" transform="'+(m?off+" "+m[1]:off)+'"/>';
+  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\\b[^>]*\\/>/g,function(el){
+    var m=el.match(/\\bclass="([^"]+)"/);
+    if(!m)return el;
+    var classes=m[1].split(/\\s+/);
+    return classes.some(function(c){return HIDE_DETAIL[c]===1;})?"":el;
   });
 }
 
