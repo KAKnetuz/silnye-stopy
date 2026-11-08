@@ -549,7 +549,7 @@ function bwFigure(p){
 A.bear={T:1.6,focus:"shin",f:function(p){
   // Одна связанная сцена: походка персонажа и синхронный крупный план двух стоп.
   // Наружный край нагружен только в фазе опоры; при переносе стопа выравнивается.
-  var cam=new Cam(1.35,55,75),F=bwFigure(p),s=cam.g(F.svg);
+  var cam=new Cam(1.19,58,70.2),F=bwFigure(p),s=cam.g(F.svg);
   var left=F.G[0],right=F.G[1];
   function tilt(g){return g.stance?BW.roll:BW.roll*(1-sm(g.k));}
   var inner='<g transform="translate(180 18) scale(.98) translate(-178 0)">'+
@@ -560,10 +560,10 @@ A.bear={T:1.6,focus:"shin",f:function(p){
   var foot=F.legs[supporting].ank;
   s+=inset("insBear",[181,79],56,inner,cam.p([foot[0]+4,foot[1]+6]));
   // Подсветка точек контакта только у нагруженной стопы; при переносе точки нет.
-  if(left.stance)s+=ci([168,118],2.8,"acf");
-  if(right.stance)s+=ci([212,118],2.8,"acf");
+  if(left.stance)s+=ci([168,113],2.3,"acf");
+  if(right.stance)s+=ci([212,113],2.3,"acf");
   // Стрелка обозначает общее направление ходьбы; опорные точки меняются по фазам.
-  s+=arrow([68,137],[85,137]);
+  s+=arrow([69,112],[86,112]);
   return s+note("опора на наружный край",true);
 }};
 
