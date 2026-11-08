@@ -254,15 +254,15 @@ function skFront(o){
 /* постобработка остальных элементов схемы под набросок: двойной штрих с дрожанием */
 var SK_CLS={fsd:1,ft:1,ftn:1,pr:1,prf:1,wall:1,ball:1,twl:1,pap:1,solea:1,ac:1,acf:0,fl:1,sd:1};
 function sketchify(svg){
-  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\b([^>]*?)class="([a-z]+)"([^>]*)\/>/g,function(all,tag,a,c,b){
+  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\b([^>]*?)class="([a-z]+)"([^>]*?)\/>/g,function(all,tag,a,c,b){
     if(!SK_CLS[c])return all;
-    // Preserve the original transform: removing it displaces mirrored or rotated feet.
-    // Compose the pencil offset with the element's own geometry transform.
+    // Preserve source transforms and apply only a small secondary pencil offset.
+    // Avoid duplicating an existing transform attribute (invalid SVG).
     var attrs=a+b,match=attrs.match(/transform="([^"]*)"/);
     var offset="translate("+f1(jit(.45))+" "+f1(jit(.45))+")";
     var composed=match?offset+" "+match[1]:offset;
-    attrs=attrs.replace(/\\s*transform="[^"]*"/,"");
-    return all+'<'+tag+a+'class="'+c+' sk2d"'+b.replace(/\\s*transform="[^"]*"/,"")+' transform="'+composed+'"/>';
+    var cleaned=attrs.replace(/\s*transform="[^"]*"/g,"");
+    return all+'<'+tag+cleaned.replace(/class="[^"]*"/,"")+' class="'+c+' sk2d" transform="'+composed+'"/>';
   });
 }
 
