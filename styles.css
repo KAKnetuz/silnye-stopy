@@ -166,54 +166,48 @@ a.btn{text-decoration:none}
 .chip.rest{background:var(--calm-soft);border-color:transparent}
 
 .anim{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.anim svg{display:block;width:100%;height:auto;aspect-ratio:2/1}
-.anim .k{fill:none;stroke:var(--ink);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
-.anim .kf{fill:none;stroke:var(--muted);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
-.anim .hd{fill:var(--ink)}
-.anim .fl{stroke:var(--line);stroke-width:2.5;stroke-linecap:round}
-.anim .pr{fill:none;stroke:var(--muted);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.anim .prf{fill:var(--line);stroke:var(--muted);stroke-width:1.5}
-.anim .ft{fill:var(--paper);stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
-.anim .ftn{fill:var(--paper)}
-.anim .ftd{fill:none;stroke:var(--ink);stroke-width:.9;stroke-linecap:round;opacity:.6}
-.anim .gh{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:2.5 2.5;opacity:.7}
-.anim .sd{fill:var(--line);stroke:var(--ink);stroke-width:1.3}
-.anim .sole{fill:var(--line)}
-.anim .ac{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.anim .acf{fill:var(--accent)}
-.anim .ball{fill:var(--accent-soft);stroke:var(--accent);stroke-width:2}
-.anim .dsh{fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3}
-.anim .dsa{fill:none;stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 3}
-.anim .twl{fill:none;stroke:var(--calm);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
-.anim .pap{fill:var(--paper);stroke:var(--line);stroke-width:1.5}
-.anim .wall{fill:var(--line)}
-.anim .ft{fill:var(--card);stroke:var(--graphite);stroke-width:1.1;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
-.anim .ftn{fill:var(--card)}
-.anim .ftd{fill:none;stroke:var(--graphite);stroke-width:.7;opacity:.5;vector-effect:non-scaling-stroke}
-.anim .sd{fill:var(--line)}
-.anim .prf{fill:none;stroke:var(--graphite);stroke-width:1;opacity:.75}
-.anim .pr{fill:none;stroke:var(--graphite);stroke-width:1.2;opacity:.75;stroke-linecap:round;stroke-linejoin:round}
-.anim .wall{fill:none;stroke:var(--graphite);stroke-width:.8;opacity:.4}
-.anim .fl{stroke:var(--graphite);stroke-width:1;opacity:.45}
-.anim .ball{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.3}
-.anim .mhl{fill:url(#skHatch);stroke:var(--accent);stroke-width:.9}
-.anim .mhls{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round}
-.anim .cap{fill:var(--muted);font:600 8px var(--f-body);letter-spacing:.01em}
-.anim .capa{fill:var(--accent);font:700 8px var(--f-body);letter-spacing:.01em}
+.anim svg{display:block;width:100%;height:auto;aspect-ratio:8/5}
+/* Схемы: все линии — постоянной толщины в пикселях экрана, независимо от масштаба сцены */
+.anim svg *{vector-effect:non-scaling-stroke}
+.anim .skf,.anim .ftf{fill:var(--card)}
+.anim .sk{fill:none;stroke:var(--graphite);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.92}
+.anim .sk2{stroke-width:.7;opacity:.4}
+.anim .skfar{opacity:.4}
+.anim .skc{fill:none;stroke:var(--graphite);stroke-width:.7;opacity:.45;stroke-linecap:round}
+.anim .skj{fill:none;stroke:var(--graphite);stroke-width:.7;opacity:.45}
+.anim .skh{stroke:var(--graphite);stroke-width:.6;opacity:.3;stroke-linecap:round}
+.anim .skm{stroke:var(--accent);stroke-width:.9;stroke-linecap:round;fill:none;opacity:.95}
+.anim .skmo{stroke-width:1.2}.anim .skmw{stroke-width:2.2}
+.anim .ft{fill:var(--card);stroke:var(--graphite);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.anim .fsd{fill:none;stroke:var(--graphite);stroke-width:.85;opacity:.7;stroke-linecap:round}
+.anim .fsc{fill:none;stroke:var(--graphite);stroke-width:.6;opacity:.3}
+.anim .sk2d{fill:none!important;stroke-width:.6!important;opacity:.38}
+.anim .solea{fill:var(--accent-soft);stroke:var(--graphite);stroke-width:1.5;stroke-linejoin:round}
+.anim .mhl{fill:url(#skHatch);stroke:var(--accent);stroke-width:1}
+.anim .gh{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3;opacity:.75}
 .anim .gap{fill:var(--accent-soft)}
-.anim .skf{fill:var(--card)}
-.anim .sk{fill:none;stroke:var(--graphite);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
-.anim .sk2{stroke-width:.6;opacity:.42}
-.anim .skfar{opacity:.38}
-.anim .skc{fill:none;stroke:var(--graphite);stroke-width:.6;opacity:.45;stroke-linecap:round}
-.anim .skj{fill:none;stroke:var(--graphite);stroke-width:.7;opacity:.5}
-.anim .skh{stroke:var(--graphite);stroke-width:.5;opacity:.32;stroke-linecap:round}
-.anim .skm{stroke:var(--accent);stroke-width:.85;stroke-linecap:round;fill:none;opacity:.95}
-.anim .skmo{stroke-width:1}.anim .skmw{stroke-width:1.8}
-.anim .fsd{fill:none;stroke:var(--graphite);stroke-width:.75;opacity:.75;vector-effect:non-scaling-stroke;stroke-linecap:round}
-.anim .fsc{fill:none;stroke:var(--graphite);stroke-width:.55;opacity:.33;vector-effect:non-scaling-stroke}
-.anim .sk2d{fill:none!important;stroke-width:.55!important;opacity:.4;vector-effect:non-scaling-stroke}
-.anim .solea{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.1;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.anim .fl{stroke:var(--graphite);stroke-width:1;opacity:.45;stroke-linecap:round}
+.anim .pr{fill:none;stroke:var(--graphite);stroke-width:1.4;opacity:.75;stroke-linecap:round;stroke-linejoin:round}
+.anim .prf{fill:none;stroke:var(--graphite);stroke-width:1;opacity:.55}
+.anim .wall{stroke:var(--graphite);stroke-width:1.4;opacity:.7}
+.anim .wallh{stroke:var(--graphite);stroke-width:.7;opacity:.35}
+.anim .wallp{fill:var(--paper);stroke:var(--graphite);stroke-width:.8;opacity:.6}
+.anim .ball{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.anim .pin{fill:var(--paper);stroke:var(--graphite);stroke-width:1.3}
+.anim .twl{fill:none;stroke:var(--calm);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.anim .pap{fill:var(--paper);stroke:var(--graphite);stroke-width:1;opacity:.8}
+.anim .pen{stroke:var(--calm);stroke-width:3;stroke-linecap:round}
+.anim .ankc{fill:var(--card);stroke:var(--graphite);stroke-width:1.3}
+.anim .ac{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.anim .acf{fill:var(--accent)}
+.anim .acd{fill:none;stroke:var(--accent);stroke-width:1.3;stroke-dasharray:4 3}
+.anim .mat{fill:var(--paper);stroke:var(--graphite);stroke-width:.9;opacity:.55}
+.anim .insb{fill:var(--card)}
+.anim .insr{fill:none;stroke:var(--graphite);stroke-width:1.3;opacity:.8}
+.anim .ldr{stroke:var(--graphite);stroke-width:.9;opacity:.55;stroke-dasharray:2 2}
+.anim .ldrd{fill:var(--graphite);opacity:.6}
+.anim .cap{fill:var(--muted);font:600 8.5px var(--f-body);letter-spacing:.01em}
+.anim .capa{fill:var(--accent);font:700 8.5px var(--f-body);letter-spacing:.01em}
 
 .dial{position:relative;width:min(58vw,30vh,230px);max-width:100%;aspect-ratio:1;margin:2px auto 0}
 .dial svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}

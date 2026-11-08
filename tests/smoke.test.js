@@ -141,7 +141,11 @@ test("работает без интернета после первого за�
 test("PWA: оболочка кэшируется атомарно и с версией", async () => {
   const sw = await readFile(join(ROOT, "sw.js"), "utf8");
   assert.match(sw, /const CACHE = ["']silnye-stopy-shell-v[\d.]+["']/, "у кэша нет версии");
-  assert.match(sw, /\.addAll\(SHELL\)/, "все ресурсы должны установиться одним набором");
+  assert.match(sw, /\.addAll\(SHELL\.map\(/, "все ресурсы должны установиться одним набором");
+  assert.match(sw, /cache: ?"reload"/, "при установке файлы берутся с сервера, а не из HTTP-кэша браузера");
+  const app = await readFile(join(ROOT, "js/app.js"), "utf8");
+  const ver = app.match(/APP_VERSION="([\d.]+)"/)[1];
+  assert.ok(sw.includes(`silnye-stopy-shell-v${ver}"`), `имя кэша в sw.js должно совпадать с версией приложения ${ver} — иначе установленные PWA не обновятся`);
   assert.match(sw, /cache\.match\(req/, "приложение должно сначала читать установленную оболочку");
   assert.doesNotMatch(sw, /fetch\(req\)\.then\([^)]*cache\.put/s, "фоновое обновление отдельных файлов запрещено");
   const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/);
@@ -156,17 +160,6 @@ test("PWA: оболочка кэшируется атомарно и с верс
 });
 
 
-test("схема «Короткая стопа» не выдаёт рисунок за диагностический отпечаток", async () => {
-  const src = await readFile(join(ROOT, "js/anim.js"), "utf8");
-  assert.match(src, /A\.shortfoot=\{T:4/);
-  const block = src.split("A.shortfoot={T:4")[1].split("A.tightrope=")[0];
-  assert.match(block, /схема опоры/);
-  assert.match(block, /свод активирован/);
-  assert.match(block, /пальцы на полу/);
-  assert.doesNotMatch(block, /стопа плоская|появилась выемка свода|отпечаток стопы/);
-});
-
-
 test("«Короткая стопа»: фазы движения сохраняют точки опоры", async () => {
   const ctx = await browser.newContext();
   const { page, errors } = await openApp(ctx);
@@ -176,7 +169,7 @@ test("«Короткая стопа»: фазы движения сохраня�
     return [0, 0.125, 0.25, 0.5, 0.75].map(phase => {
       const svg = exercise.f(phase);
       return { phase, length: svg.length, supports: (svg.match(/class="acf"/g) || []).length,
-        labels: svg.includes("пальцы на полу") && svg.includes("схема опоры"), invalid: /NaN|undefined|Infinity/.test(svg) };
+        labels: /свод/.test(svg) && !/отпечаток стопы|появилась выемка/.test(svg), invalid: /NaN|undefined|Infinity/.test(svg) };
     });
   });
   assert.ok(!result.missing, "нет анимации «Короткая стопа»");
@@ -262,26 +255,90 @@ test("аниме-скетч: вторичные штрихи сохраняют 
 });
 
 
-test("26 индивидуальных аниме-эскизов: движение и подписи", async () => {
+/* ---------- Схемы: одна цельная сцена на упражнение, геометрия и вёрстка ---------- */
+const PHASES = [0, 0.25, 0.5, 0.75, 1];
+
+test("схемы: одна сцена на упражнение, без старых дополнительных панелей", async () => {
+  const src = await readFile(join(ROOT, "js/anim.js"), "utf8");
+  assert.doesNotMatch(src, /animeStudy|ANIME_STUDIES|motionDetail/, "в anim.js остались дополнительные эскизы поверх сцен");
+  assert.doesNotMatch(src, /A\[name\]\.f\s*=\s*function/, "сцены не должны оборачиваться дополнительными рисунками");
   const ctx = await browser.newContext();
   const { page, errors } = await openApp(ctx);
-  const result = await page.evaluate(() => {
-    const names = Object.keys(AN).filter(n => AN[n] && typeof AN[n].f === "function" && n !== "shortfoot");
-    return names.map(name => {
-      const first = AN[name].f(0);
-      const middle = AN[name].f(.5);
-      const last = AN[name].f(.75);
-      return { name, panel: first.includes('M4 128H236'),
-        distinct: first !== middle || middle !== last,
-        invalid: /NaN|undefined|Infinity/.test(first + middle + last) };
-    });
-  });
-  assert.equal(result.length, 26);
-  for (const item of result) {
-    assert.ok(item.panel, "нет отдельного эскиза: " + item.name);
-    assert.ok(item.distinct, "нет анимации: " + item.name);
-    assert.ok(!item.invalid, "ошибка геометрии: " + item.name);
+  const r = await page.evaluate((PH) => ANIM_KEYS.map(k => {
+    const sc = AN[k], out = { k, ok: !!(sc && typeof sc.f === "function" && sc.T > 0), insets: 0, panel: false, distinct: true };
+    if (!out.ok) return out;
+    AN.seed(5); const a = sc.f(0.25); AN.seed(5); const b = sc.f(0.5); AN.seed(5); const c = sc.f(0.75);
+    out.distinct = a !== b && b !== c;
+    PH.forEach(p => { const svg = sc.f(p); out.insets = Math.max(out.insets, (svg.match(/class="insr"/g) || []).length); if (svg.includes("M4 128H236")) out.panel = true; });
+    return out;
+  }), PHASES);
+  assert.equal(r.length, 27);
+  assert.equal(await page.evaluate(() => AN.VIEWBOX), "0 0 240 150");
+  for (const x of r) {
+    assert.ok(x.ok, `нет сцены у ${x.k}`);
+    assert.ok(x.insets <= 1, `${x.k}: больше одной лупы`);
+    assert.ok(!x.panel, `${x.k}: осталась нижняя полоса со вторым рисунком`);
+    assert.ok(x.distinct, `${x.k}: сцена не двигается между фазами`);
   }
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test("схемы: все элементы внутри кадра, подписи не пересекаются со стрелками, персонажем и друг с другом", async () => {
+  const ctx = await browser.newContext({ viewport: { width: 520, height: 400 } });
+  const { page, errors } = await openApp(ctx);
+  const problems = await page.evaluate((PH) => {
+    const host = document.createElement("div"); host.className = "anim"; host.style.cssText = "position:fixed;left:0;top:0;width:480px;z-index:99";
+    host.innerHTML = '<svg viewBox="' + AN.VIEWBOX + '"></svg>'; document.body.appendChild(host);
+    const svg = host.firstChild, out = [];
+    const SOLID = /\b(ac|acf|sk|skf|ft|ftf|ball|pin|insb|solea)\b/;
+    function box(el, R, k) { const b = el.getBoundingClientRect(); return { x0: (b.left - R.left) / k, y0: (b.top - R.top) / k, x1: (b.right - R.left) / k, y1: (b.bottom - R.top) / k }; }
+    function inter(a, b) { return Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)); }
+    ANIM_KEYS.forEach(k => PH.forEach(p => {
+      AN.setFocus(AN[k].focus); AN.seed(3);
+      svg.innerHTML = AN.sketchify(AN[k].f(p));
+      const R = svg.getBoundingClientRect(), s = R.width / 240, texts = [], solids = [];
+      svg.querySelectorAll("path,line,circle,ellipse,rect,text").forEach(el => {
+        if (el.closest("defs,clipPath,[clip-path]")) return;
+        const b = box(el, R, s);
+        if (b.x0 < -1 || b.y0 < -1 || b.x1 > 241 || b.y1 > 151) out.push(`${k} ${p}: <${el.tagName} class="${el.getAttribute("class")}"> выходит за кадр (${b.x0.toFixed(1)},${b.y0.toFixed(1)})–(${b.x1.toFixed(1)},${b.y1.toFixed(1)})`);
+        if (el.tagName === "text") { if (el.textContent) texts.push([el.textContent, b]); }
+        else if (SOLID.test(el.getAttribute("class") || "")) solids.push([el.getAttribute("class"), b]);
+      });
+      texts.forEach((t, i) => {
+        texts.slice(i + 1).forEach(u => { if (inter(t[1], u[1]) > 0.5) out.push(`${k} ${p}: подписи «${t[0]}» и «${u[0]}» пересекаются`); });
+        solids.forEach(e => { if (inter(t[1], e[1]) > 1.5) out.push(`${k} ${p}: подпись «${t[0]}» наезжает на ${e[0]}`); });
+      });
+    }));
+    host.remove();
+    return out;
+  }, PHASES);
+  assert.deepEqual(problems, []);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+for (const [w, h] of [[360, 800], [390, 844], [430, 932]]) {
+  test(`экран тренировки ${w}×${h}: схема во всю ширину, кнопка «Старт» видна, нет горизонтальной прокрутки`, async () => {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, serviceWorkers: "block" });
+    const { page, errors } = await openApp(ctx);
+    await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+    for (const i of [4, 8, 15, 18]) {               // длинное название, вид со стороны стоп, крупный план, лупа
+      await page.locator(".exr").nth(i).click();
+      await page.waitForTimeout(150);
+      const m = await page.evaluate(() => {
+        const a = document.querySelector(".anim").getBoundingClientRect(), b = document.getElementById("w-main").getBoundingClientRect();
+        return { aw: a.width, ah: a.height, vw: innerWidth, vh: innerHeight, sw: document.scrollingElement.scrollWidth, bBottom: b.bottom,
+          vb: document.getElementById("w-anim-svg").getAttribute("viewBox") };
+      });
+      assert.equal(m.vb, "0 0 240 150");
+      assert.ok(Math.abs(m.aw - (w - 32)) < 2, `схема не во всю ширину: ${m.aw}`);
+      assert.ok(Math.abs(m.ah / m.aw - 150 / 240) < 0.02, `пропорции схемы искажены: ${m.aw}×${m.ah}`);
+      assert.ok(m.sw <= m.vw, "появилась горизонтальная прокрутка");
+      assert.ok(m.bBottom <= m.vh, "кнопка «Старт» за пределами экрана");
+      await page.click("#w-close");
+    }
+    assert.deepEqual(errors, []);
+    await ctx.close();
+  });
+}

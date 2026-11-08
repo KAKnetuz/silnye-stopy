@@ -248,15 +248,14 @@ function pips(done,cur){
 
 var REDUCED=false;try{REDUCED=window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
 var animCur=null,animT0=0,animRAF=0,animLast=0;
-var FOCUS_BY={circles:"shin",noski:"shin",soldier:"calf",penguin:"shin",bear:"shin",rollwalk:"arch",ladoshki:"shin",claps:"shin",wipers:null,caterpillar:"arch",towel:"arch",cleanup:"arch",rollpin:"arch",hedgehog:"arch",artist:"arch",shortfoot:"arch",raise:"calf",rollouts:"shin",tightrope:"arch",heron:"calf",fivepoints:null,angel:null,wallsit:"quad",bike:"quad",stowel:"calf",swall:"calf",rags:null};
 function drawAnim(){if(!animCur)return;var t=now(),p=REDUCED?0.3:((t-animT0)/1000/animCur.T)%1;
-  AN.setFocus(FOCUS_BY[ex().anim]);AN.seed(REDUCED?7:Math.floor(t/140)*977+3); // линии наброска «дышат» ~7 раз в секунду
-  var svg=$("w-anim-svg");
-  svg.setAttribute("aria-label","Схема упражнения: "+ex().name+". Исходное положение: "+ex().start+". Движение: "+ex().how);
-  svg.innerHTML=AN.sketchify(animCur.f(p));}
+  AN.setFocus(animCur.focus);AN.seed(REDUCED?7:Math.floor(t/140)*977+3); // линии наброска «дышат» ~7 раз в секунду
+  $("w-anim-svg").innerHTML=AN.sketchify(animCur.f(p));}
 var animVisible=true;
 function animLoop(ts){animRAF=0;if(S.view!=="work"||!animCur||document.hidden)return;if(animVisible&&ts-animLast>=50){animLast=ts;drawAnim();}animRAF=requestAnimationFrame(animLoop);} // 20 кадров в секунду, пауза вне экрана
-function startAnim(){animCur=AN[ex().anim]||null;animT0=now();drawAnim();if(!REDUCED&&!animRAF)animRAF=requestAnimationFrame(animLoop);}
+function startAnim(){animCur=AN[ex().anim]||null;var svg=$("w-anim-svg");svg.setAttribute("viewBox",AN.VIEWBOX);
+  svg.setAttribute("aria-label","Схема упражнения «"+ex().short+"». Исходное положение: "+ex().start+" Движение: "+ex().how); // подпись меняется только при смене упражнения
+  animT0=now();drawAnim();if(!REDUCED&&!animRAF)animRAF=requestAnimationFrame(animLoop);}
 function stopAnim(){if(animRAF)cancelAnimationFrame(animRAF);animRAF=0;}
 
 var toastT=null;
@@ -280,7 +279,7 @@ function applyTheme(t){
 }
 
 /* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
-var APP_VERSION="1.7",APP_DATE="08.11.2026";
+var APP_VERSION="1.8",APP_DATE="08.11.2026";
 var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
 function openSheet(id){$(id).hidden=false;}
 function closeSheet(id){$(id).hidden=true;}
