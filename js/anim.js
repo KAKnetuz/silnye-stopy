@@ -773,9 +773,11 @@ A.shortfoot={T:4,f:function(p){
   s+='<g opacity="'+f1(0.25+0.75*u)+'">'+arrow([ax,y-1],[ax,y-4-ah*sc*0.85])+ln([ballX+2,y+5],[tipX,y+5],"ac")+arrow([ballX+6,y+12],[ballX-12,y+12])+"</g>";
   s+=tx(3,y+21,"свод вверх",u>0.5?"capa":"cap","start")+tx(116,y+21,"пальцы на полу","cap","end");
   s+=divider();
-  s+=tx(182,10,"отпечаток стопы");
+  // This is a schematic plantar view, not a diagnostic footprint or a claim
+  // that a particular arch shape must appear during the exercise.
+  s+=tx(182,10,"схема опоры");
   s+='<path d="'+printPath(182,72,u,0)+'" class="solea"/>'+printToes(182,72,0,"solea");
-  s+=tx(182,116,u>0.5?"появилась выемка свода":"стопа плоская",u>0.5?"capa":"cap");
+  s+=tx(182,116,u>0.5?"свод активирован":"стопа расслаблена",u>0.5?"capa":"cap");
   return s;
 }};
 
