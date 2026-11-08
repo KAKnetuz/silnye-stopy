@@ -848,10 +848,10 @@ A.rags={T:14,f:function(p){ // 4 с встряхиваем, затем один 
    анатомические детали, которые на телефоне создают визуальный шум. */
 var HIDE_DETAIL={sk2:1,skc:1,skj:1,fsd:1,fsc:1,stripe:1,mhl:1,gh:1,skfar:0};
 function sketchify(svg){
-  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\\b[^>]*\\/>/g,function(el){
-    var m=el.match(/\\bclass="([^"]+)"/);
+  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\b[^>]*\/>/g,function(el){
+    var m=el.match(/\bclass="([^"]+)"/);
     if(!m)return el;
-    var classes=m[1].split(/\\s+/);
+    var classes=m[1].split(/\s+/);
     return classes.some(function(c){return HIDE_DETAIL[c]===1;})?"":el;
   });
 }
