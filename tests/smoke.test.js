@@ -417,3 +417,27 @@ test("настройки: мужского голоса на телефоне н
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test("музыка: планировщик не перезапускается при повторном рендере, отключение останавливает таймер", async () => {
+  const ctx=await browser.newContext();
+  const {page,errors}=await openApp(ctx);
+  const result=await page.evaluate(async()=>{
+    unlock();
+    if(AC && AC.state==="suspended")await AC.resume();
+    if(!AC)return {unsupported:true};
+    const original={view:S.view,phase:S.phase,muted:S.muted,music:SET.music};
+    S.view="work";S.phase="manual";S.muted=false;SET.music=true;
+    updateMusic();
+    const timer=MUS.timer;
+    updateMusic();updateMusic();
+    const stable=MUS.on && MUS.timer===timer && timer!==null;
+    S.phase="idle";updateMusic();
+    const stopped=!MUS.on && MUS.timer===null;
+    Object.assign(S,{view:original.view,phase:original.phase,muted:original.muted});
+    SET.music=original.music;
+    return {stable,stopped};
+  });
+  if(!result.unsupported){assert.equal(result.stable,true);assert.equal(result.stopped,true);}
+  assert.deepEqual(errors,[]);
+  await ctx.close();
+});
