@@ -601,13 +601,17 @@ A.claps={T:1.6,f:function(p){
   return s+view("со стороны стоп")+note("хлопок подошвами",hit);
 }};
 A.wipers={T:2.4,f:function(p){
-  var a=30*ease(p),s="";
-  s+=lieEnd({feet:[{rot:a},{rot:a}]});
-  s+=footTopSk(99,134,{sc:1.1,cls:"gh",sole:1})+footTopSk(141,134,{sc:1.1,mir:1,cls:"gh",sole:1});
-  var cam=new Cam(.88,14.4,17),hl=cam.p([99,134]),hr=cam.p([141,134]),going=(p%1)<0.5;
-  s=cam.g(s)+dot(hl)+dot(hr);
-  s+=going?arcA(hl[0],hl[1],53,-88,-64)+arcA(hr[0],hr[1],53,-92,-116):arcA(hl[0],hl[1],53,-64,-88)+arcA(hr[0],hr[1],53,-116,-92);
-  return s+view("со стороны стоп")+note("пятки на месте",true);
+  // Единая сцена: корпус и ноги видны от стоп; обе пятки закреплены.
+  // Носки сходятся к середине и возвращаются в исходное положение.
+  var u=ease(p),angle=28*u,cam=new Cam(.88,14.4,17);
+  var s=cam.g(lieEnd({feet:[{rot:angle},{rot:angle}]}));
+  var heelL=cam.p([99,134]),heelR=cam.p([141,134]);
+  s+=dot(heelL)+dot(heelR);
+  // Дуги расположены возле носков и показывают реальную симметричную траекторию.
+  var dir=(p%1)<.5;
+  s+=dir?arcA(heelL[0],heelL[1],35,-88,-66)+arcA(heelR[0],heelR[1],35,-92,-114):
+    arcA(heelL[0],heelL[1],35,-66,-88)+arcA(heelR[0],heelR[1],35,-114,-92);
+  return s+view("вид со стороны стоп")+note("пятки неподвижны",true);
 }};
 
 /* ---------- сидя: крупный план стопы ---------- */
