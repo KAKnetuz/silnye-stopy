@@ -208,7 +208,7 @@ function akSide(hip,hipF,sh,shF,up,legs,arms,face){
   s+=skShape(limbPts(nb,mv(hip,up,34.5),NECK,NECK),false);
   if(legs[0])s+=akLeg(hip,legs[0],false);
   if(arms[0])s+=akArm(sh,arms[0],false);
-  return s+akHeadSide(hd,Math.abs(up[0])>.85?[0,-1]:up,face);
+  return s+akHeadSide(hd,up,face);
 }
 /* fig: персонаж сбоку. o.hip — тазобедренный сустав ближней ноги; o.tor — наклон корпуса (0 — вертикально, −90 — лёжа на спине головой влево);
    o.legs/o.arms — [ближняя, дальняя]; o.far — смещение дальних конечностей; o.face — куда смотрит (1 — вправо). */
