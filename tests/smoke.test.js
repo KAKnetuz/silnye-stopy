@@ -165,3 +165,27 @@ test("схема «Короткая стопа» не выдаёт рисуно�
   assert.match(block, /пальцы на полу/);
   assert.doesNotMatch(block, /стопа плоская|появилась выемка свода|отпечаток стопы/);
 });
+
+
+test("«Короткая стопа»: фазы движения сохраняют точки опоры", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const result = await page.evaluate(() => {
+    const exercise = AN.shortfoot;
+    if (!exercise || typeof exercise.f !== "function") return { missing: true };
+    return [0, 0.125, 0.25, 0.5, 0.75].map(phase => {
+      const svg = exercise.f(phase);
+      return { phase, length: svg.length, supports: (svg.match(/class="acf"/g) || []).length,
+        labels: svg.includes("пальцы на полу") && svg.includes("схема опоры"), invalid: /NaN|undefined|Infinity/.test(svg) };
+    });
+  });
+  assert.ok(!result.missing, "нет анимации «Короткая стопа»");
+  for (const frame of result) {
+    assert.ok(frame.length > 300, `пустая фаза ${frame.phase}`);
+    assert.ok(frame.supports >= 2, `нет обеих точек опоры в фазе ${frame.phase}`);
+    assert.ok(frame.labels, `нет инструкций в фазе ${frame.phase}`);
+    assert.ok(!frame.invalid, `некорректная геометрия в фазе ${frame.phase}`);
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
