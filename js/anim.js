@@ -844,6 +844,57 @@ A.hedgehog={T:6,f:function(p){
   return s;
 }};
 
+/* 26 individual anatomical movement studies: supplementary close-ups below each scene.
+   Every study uses the same detailed sketch-foot geometry and its own motion model. */
+var ANIME_STUDIES={
+  circles:{label:"круг стопой",view:"top",rot:28,spread:0,curl:0},
+  noski:{label:"носки на себя",view:"side",rot:-25,spread:0,curl:0},
+  soldier:{label:"ходьба на пятках",view:"side",rot:-35,spread:0,curl:0},
+  penguin:{label:"ходьба на носках",view:"side",rot:28,spread:0,curl:0},
+  claps:{label:"сведение стоп",view:"top",rot:0,spread:22,curl:0},
+  caterpillar:{label:"сокращение стопы",view:"side",rot:0,spread:0,curl:1},
+  towel:{label:"захват ткани",view:"side",rot:0,spread:0,curl:0.85},
+  cleanup:{label:"поднять предмет",view:"side",rot:0,spread:0,curl:1},
+  rollpin:{label:"перекат по ролику",view:"side",rot:0,spread:0,curl:0},
+  artist:{label:"рисование стопой",view:"top",rot:24,spread:0,curl:0},
+  heron:{label:"стойка на одной ноге",view:"top",rot:0,spread:0,curl:0},
+  fivepoints:{label:"пять точек опоры",view:"top",rot:0,spread:0,curl:0},
+  angel:{label:"руки вдоль стены",view:"top",rot:0,spread:0,curl:0},
+  wallsit:{label:"опора всей стопой",view:"side",rot:0,spread:0,curl:0},
+  bike:{label:"круговое движение",view:"side",rot:25,spread:0,curl:0},
+  stowel:{label:"растяжение с полотенцем",view:"side",rot:-20,spread:0,curl:0},
+  swall:{label:"наклон к стене",view:"side",rot:0,spread:0,curl:0},
+  rags:{label:"встряхивание ног",view:"top",rot:16,spread:0,curl:0},
+  bear:{label:"перекат на край",view:"top",rot:0,spread:22,curl:0},
+  raise:{label:"подъём носка",view:"side",rot:-25,spread:0,curl:0},
+  rollwalk:{label:"пятка — носок",view:"side",rot:24,spread:0,curl:0},
+  wipers:{label:"стопы в стороны",view:"top",rot:0,spread:22,curl:0},
+  ladoshki:{label:"носки на себя",view:"side",rot:-24,spread:0,curl:0},
+  tightrope:{label:"шаг по линии",view:"top",rot:0,spread:0,curl:0},
+  rollouts:{label:"наружный край",view:"top",rot:0,spread:20,curl:0},
+  hedgehog:{label:"массаж мячом",view:"side",rot:0,spread:0,curl:0},
+};
+function animeStudy(name,p){
+  var o=ANIME_STUDIES[name];if(!o)return "";
+  var t=ease(p),a=t*o.rot,spread=t*o.spread,cu=t*o.curl;
+  var s='<path d="M4 128H236" class="fl"/>'+tx(8,139,o.label,"cap","start");
+  // Foot close-up: movement direction is encoded in the geometry, not just arrows.
+  if(o.view==="top"){
+    s+=footTop(67,168,{sc:.64,rot:-a-spread*.5});
+    s+=footTop(105,168,{sc:.64,rot:a+spread*.5,mir:1});
+    if(o.rot||o.spread)s+=arrow([155,160],[155+Math.max(-20,Math.min(20,a+spread)),151]);
+  }else{
+    s+=footSide(49,169,{sc:.92,shin:28,rot:a,curl:cu,arch:name==="caterpillar"?1.6*t:0,s:name==="caterpillar"?.5*t:0});
+    if(o.rot||o.curl||name==="caterpillar")s+=arrow([158,165],[158+Math.max(-18,Math.min(18,a*.6)),148-9*cu]);
+  }
+  s+=tx(231,163,t>.5?"движение":"исходно",t>.5?"capa":"cap","end");
+  return s;
+}
+Object.keys(ANIME_STUDIES).forEach(function(name){
+  var original=A[name].f;
+  A[name].f=function(p){return original(p)+animeStudy(name,p);};
+});
+
 A.setFocus=function(f){FOCUS=f||null;};A.setStyle=function(x){STYLE=x;};A.seed=function(n){SKSEED=n;};A.sketchify=function(s){return sketchify(s);};
 return A;
 })();
