@@ -228,32 +228,27 @@ test("аниме-геометрия: все 27 движений на ключе�
 });
 
 
-test("аниме-скетч: вторичные штрихи сохраняют повороты без дублирования transform", async () => {
+test("упрощённая графика: мелкие штрихи удалены, исходные трансформации сохранены", async () => {
   const ctx = await browser.newContext();
   const { page, errors } = await openApp(ctx);
   const outcome = await page.evaluate(() => {
-    const raw = '<path d="M0 0L10 10" class="ft" transform="rotate(20 5 5)"/>';
+    const raw = '<path d="M0 0L10 10" class="ft" transform="rotate(20 5 5)"/>'+
+      '<path d="M0 0L10 10" class="sk sk2"/>'+
+      '<path d="M0 0L10 10" class="fsd"/>';
     const result = AN.sketchify(raw);
     const root = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     root.innerHTML = result;
     const paths = [...root.querySelectorAll("path")];
-    return {
-      count: paths.length,
-      duplicate: /<path[^>]*\btransform="[^"]*"[^>]*\btransform="/.test(result),
-      original: paths[0]?.getAttribute("transform"),
-      secondary: paths[1]?.getAttribute("transform"),
-      secondaryClass: paths[1]?.getAttribute("class")
-    };
+    return {count: paths.length, original: paths[0]?.getAttribute("transform"),
+      className: paths[0]?.getAttribute("class"), duplicate: /sk2d/.test(result)};
   });
-  assert.equal(outcome.count, 2);
-  assert.equal(outcome.duplicate, false);
+  assert.equal(outcome.count, 1);
   assert.equal(outcome.original, "rotate(20 5 5)");
-  assert.match(outcome.secondary, /^translate\([^)]+\) rotate\(20 5 5\)$/);
-  assert.match(outcome.secondaryClass, /\bsk2d\b/);
+  assert.equal(outcome.className, "ft");
+  assert.equal(outcome.duplicate, false);
   assert.deepEqual(errors, []);
   await ctx.close();
 });
-
 
 /* ---------- Схемы: одна цельная сцена на упражнение, геометрия и вёрстка ---------- */
 const PHASES = [0, 0.25, 0.5, 0.75, 1];
