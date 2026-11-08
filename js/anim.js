@@ -161,7 +161,7 @@ function akLeg(h,L,far){
   var sT=Math.abs(bend)>3?(bend>0?-1:1):sideOf(h,L.knee,td);
   var TA=sT>0?THF:THB,TB=sT>0?THB:THF,SA=sS>0?SHF:SHB,SB=sS>0?SHB:SHF;
   var s=clothLeg(h,L.knee,L.ank,TA,TB,SA,SB,far,0),P=footShape(L);
-  s+=skShape([P(-1.4,2.2),P(-.6,0),P(2.2,-.3),P(5,1),P(9,-.2),P(12.8,.4),P(13,1.4),P(11,2.3),P(7,3.6),P(3.6,5.6),P(.4,5.8)],far);
+  s+=skShape([P(-1.4,2.2),P(-.6,0),P(2.2,-.3),P(5,1),P(9,-.2),P(12.1,.4),P(12.3,1.4),P(10.5,2.3),P(7,3.6),P(3.6,5.6),P(.4,5.8)],far);
   if(!far){
     s+=skJoint(L.knee,3.5)+skJoint(L.ank,2.1);
     s+=skContour(L.knee,L.ank,.36,SA,SB)+skContour(h,L.knee,.55,TA,TB);
@@ -187,6 +187,9 @@ function akHeadSide(c,up,face){ // голова сбоку: череп, остр
   function P(x,y){return [c[0]+n[0]*x+up[0]*y,c[1]+n[1]*x+up[1]*y];}
   var s=skShape([P(0,7),P(4.6,5.4),P(6.2,1.4),P(5.8,-1.6),P(4.2,-5.4),P(2.4,-7.4),P(.4,-6.4),P(-2.6,-4.6),P(-5.6,-1.4),P(-6.2,2.4),P(-4.4,5.8)],false);
   s+=path(smoothPath(jpts([P(-1,-6.2),P(-.8,-1),P(-1.6,3.4)],.2),false),"skc");
+  // Ухо и переносица читаются в профиль, не меняя посадку головы на шее.
+  s+=path(smoothPath([P(-5.2,.8),P(-7.1,1.4),P(-7.5,-1.2),P(-5.4,-2.4)],false),"skc");
+  s+=path(smoothPath([P(-5.9,-.2),P(-6.7,-.6),P(-6.2,-1.5)],false),"skc");
   var e1=P(5.3,.9),e2=P(4,2),e3=P(2.6,1.1),ir=P(4.2,.1),b1=P(5.4,3),b2=P(4,3.8),b3=P(2.5,3.2),m1=P(5.6,-3.4),m2=P(4.6,-3.9);
   s+=path("M"+f1(e1[0])+" "+f1(e1[1])+"Q"+f1(e2[0])+" "+f1(e2[1])+" "+f1(e3[0])+" "+f1(e3[1]),"eye")+ci(ir,.75,"iris")+path("M"+f1(b1[0])+" "+f1(b1[1])+"Q"+f1(b2[0])+" "+f1(b2[1])+" "+f1(b3[0])+" "+f1(b3[1]),"skc")+ln(m1,m2,"skc");   // глаз, бровь, губы
   s+=path(smoothPath(jpts([P(-5.6,2),P(-1,6.4),P(3.4,6.6),P(6.4,3.2),P(6.6,.8),P(4.6,2.6),P(2.4,3.4)],.3),false),"sk sk2");
@@ -272,6 +275,9 @@ function akHeadFront(c,back){
     s+=path(smoothPath(jpts([P(-5.4,-1),P(-2,-4.8),P(0,-5.4)],.25),false),"skc")+path(smoothPath(jpts([P(5.4,-1),P(2,-4.8),P(0,-5.4)],.25),false),"skc");
     s+=path(smoothPath(jpts([P(0,-.5),P(1.4,-6),P(.6,-12),P(-1,-15)],.3),false),"sk")+path(smoothPath(jpts([P(-.8,-.5),P(-1.2,-6.4),P(-.4,-12.4)],.3),false),"sk sk2");
     return s;}
+  // Уши и мягкая линия подбородка — только на фронтальном ракурсе.
+  s+=path(smoothPath([P(-6.1,.5),P(-7.5,.1),P(-7.1,-2.8),P(-5.7,-3.5)],false),"skc");
+  s+=path(smoothPath([P(6.1,.5),P(7.5,.1),P(7.1,-2.8),P(5.7,-3.5)],false),"skc");
   s+=path(smoothPath(jpts([P(0,7.4),P(.4,0),P(0,-7)],.2),false),"skc")+path(smoothPath(jpts([P(-5.8,-.4),P(0,-1.2),P(5.8,-.4)],.2),false),"skc");
   s+=path(smoothPath(jpts([P(-6.8,0),P(-6.6,5.6),P(-2,8.4),P(3,8.2),P(6.8,5),P(7,-1.4),P(6.4,-5)],.3),false),"sk sk2");
   s+=path(smoothPath(jpts([P(-6.4,4),P(-3,2),P(0,4.4),P(3,2),P(6.4,4)],.25),false),"sk sk2");
@@ -497,14 +503,14 @@ function bwP(o,x,z,y){return [o[0]+BW.f[0]*x+BW.l[0]*z,o[1]+BW.f[1]*x+BW.l[1]*z-
 function bwFoot(ank,right,roll,curl){ // стопа почти в профиль (три четверти), стоит на наружном крае: внутренний край приподнят на roll°
   var base=[ank[0],ank[1]+6.6],cu=curl||0,F=[.9,.24],Lw=[.46,-.18],zi=right?5.4:-5.4,lift=Math.abs(zi)*Math.sin(r(roll));
   function P(x,y,z){z=z||0;return [base[0]+F[0]*x+Lw[0]*z,base[1]+F[1]*x+Lw[1]*z-y-(z?lift*Math.abs(z)/Math.abs(zi):0)];}
-  var tip=13.4-1.4*cu,s="";
+  var tip=12.6-1.4*cu,s="";
   s+=path(smoothPath([P(1.6,0),P(9.4,0),P(6.4,0,zi*.9)],true),"gap");                                                               // просвет под приподнятым внутренним краем
-  var out=[P(-3.2,1.6),P(-2.4,0),P(3,0),P(9,0),P(11.6,.15),P(tip,.8+cu*.8),P(tip+.1,1.8+cu),P(tip-1.3,2.5+cu*.6),P(9.4,2.9),P(6,3.9),P(2.8,5.6),P(1,7.6),P(-1.4,7.8),P(-3.2,4.6)];
+  var out=[P(-3.2,1.6),P(-2.4,0),P(3,0),P(9,0),P(11.1,.15),P(tip,.8+cu*.8),P(tip+.1,1.8+cu),P(tip-1.3,2.5+cu*.6),P(9.1,2.9),P(6,3.9),P(2.8,5.6),P(1,7.6),P(-1.4,7.8),P(-3.2,4.6)];
   s+=skShape(out,false);
   for(var k=0;k<3;k++){var x=tip-1.6-1.9*k;s+=path(smoothPath([P(x-.8,2.4+cu*.4-.2*k),P(x+.4,1.2+cu*.4),P(x,.3+cu*.3)],false),"fsd");}   // пальцы
   s+=path(smoothPath(jpts([P(1.6,6.2),P(5.4,4),P(10.2,2.5)],.12),false),"skc");                                                         // сухожилие подъёма
   s+=path(smoothPath([P(-.6,5.6),P(-1.6,4.3),P(-.4,3.2)],false),"skc");                                                                  // лодыжка
-  var e=[P(-2.6,0),P(3,0),P(9,0),P(11.6,.2)];
+  var e=[P(-2.6,0),P(3,0),P(9,0),P(11.1,.2)];
   s+=path(smoothPath(e,false),"edgeg")+path(smoothPath(e,false),"edgel");                                                                // наружный край — опора
   return s;
 }
