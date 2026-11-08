@@ -9,11 +9,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preload" href="fonts/GolosText.woff" as="font" type="font/woff" crossorigin>
+<style>
+@font-face{font-family:"Golos Text";src:url("fonts/GolosText.woff") format("woff");font-weight:400 700;font-display:swap}
+@font-face{font-family:"Unbounded";src:url("fonts/Unbounded.woff") format("woff");font-weight:600 700;font-display:swap}
+@font-face{font-family:"Martian Mono";src:url("fonts/MartianMono.woff") format("woff");font-weight:500 700;font-display:swap}
+</style>
 <title>Сильные стопы</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script>(function(){try{var l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Martian+Mono:wght@500;700&family=Unbounded:wght@600;700&display=swap";document.head.appendChild(l);}catch(e){}})();
-(function(){var r=document.documentElement;window.__hostTheme=r.getAttribute("data-theme");try{var t=JSON.parse(localStorage.getItem("ss_theme")||"null");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);}catch(e){}})();</script>
+<script>(function(){var r=document.documentElement;window.__hostTheme=r.getAttribute("data-theme");try{var t=JSON.parse(localStorage.getItem("ss_theme")||"null");if(t==="light"||t==="dark")r.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
 /* Layout: one-screen app. Home = streak strip + four exercise blocks; workout = full-height view with exercise, round timer dial, instructions, controls pinned to the bottom. */
 :root{
@@ -61,13 +64,6 @@ h1,h2,h3{text-wrap:balance}
 .stat{display:flex;align-items:baseline;gap:8px}
 .stat b{font-family:var(--f-num);font-weight:700;font-size:30px;line-height:1}
 .stat span{color:var(--muted);font-size:14px}
-.days{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:4px}
-.day{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-weight:600}
-.day i{width:100%;max-width:18px;aspect-ratio:1;border-radius:50%;border:1.5px solid var(--line);display:block}
-.day.on i{background:var(--accent);border-color:var(--accent)}
-.day.today{color:var(--ink)}
-.day.today i{border-color:var(--ink)}
-.day.on.today i{border-color:var(--accent)}
 
 .week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .wk{height:36px;border-radius:10px;border:1.5px solid var(--line);display:grid;place-items:center;font-family:var(--f-num);font-size:13px;font-weight:700;color:var(--muted)}
@@ -107,8 +103,34 @@ h1,h2,h3{text-wrap:balance}
 .themes{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-basis:100%}
 .themes>span{font-weight:500}
 .seg{display:inline-grid;grid-template-columns:repeat(3,auto);gap:3px;padding:3px;border-radius:12px;background:var(--line)}
-.seg button{border:0;border-radius:9px;background:transparent;padding:6px 12px;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button{border:0;border-radius:9px;background:transparent;padding:0 14px;min-height:44px;font-weight:600;font-size:15px;color:var(--muted)}
 .seg button[aria-checked="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+.hero{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.hero>div{min-width:0}
+.gear{width:46px;height:46px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--ink);flex:none;margin-top:2px}
+.gear svg{width:24px;height:24px}
+.foot{margin:6px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+.foot button{border:0;background:none;color:inherit;text-decoration:underline;font-size:12px;padding:4px}
+.sheet{position:fixed;inset:0;z-index:35;display:flex;align-items:flex-end;justify-content:center;background:rgba(8,12,20,.5);padding-top:env(safe-area-inset-top,0px)}
+.sheet-c{background:var(--card);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding-left:max(20px, env(safe-area-inset-left,0px));padding-right:max(20px, env(safe-area-inset-right,0px));padding-top:22px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));max-height:90%;overflow:auto;display:grid;gap:14px}
+.sheet h2{font-family:var(--f-display);font-size:21px;line-height:1.15;margin:0}
+.sheet p{margin:0;line-height:1.5}
+.sheet .warn{display:grid;gap:10px;padding:14px 16px;border-radius:14px;background:var(--accent-soft)}
+.sheet .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.eq{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.eq label{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;border:1px solid var(--line);font-weight:500;cursor:pointer}
+.eq input{width:22px;height:22px;accent-color:var(--accent);flex:none;margin:0}
+.eq input:checked+span{color:var(--muted);text-decoration:line-through}
+.set-sec{display:grid;gap:12px;padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--line)}
+.set-sec h3{margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.set-sec p{margin:0;line-height:1.5;font-size:15px}
+.set-sec .small{font-size:13px;color:var(--muted)}
+.set-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.set-row .btn{min-height:46px;font-size:15px;padding:0 16px}
+.set-sec textarea{width:100%;min-height:76px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);font:13px/1.4 var(--f-num);padding:10px;resize:vertical;word-break:break-all}
+.set-sec input[type=time]{font:600 18px var(--f-body);color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;min-height:46px}
+a.btn{text-decoration:none}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;min-height:54px;padding:0 20px;font-weight:700;font-size:17px;text-align:center}
 .btn-main{background:var(--accent);color:var(--accent-ink)}
@@ -234,9 +256,14 @@ h1,h2,h3{text-wrap:balance}
 <body>
 <div class="wrap" id="home">
   <header class="hero">
-    <p class="kicker">Ежедневная гимнастика для стоп</p>
-    <h1>Сильные стопы</h1>
-    <p class="meta" id="h-meta"></p>
+    <div>
+      <p class="kicker">Ежедневная гимнастика для стоп</p>
+      <h1>Сильные стопы</h1>
+      <p class="meta" id="h-meta"></p>
+    </div>
+    <button class="gear" id="h-settings" type="button" aria-label="Настройки">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
   </header>
 
   <section class="streak" aria-label="Серия занятий">
@@ -258,21 +285,8 @@ h1,h2,h3{text-wrap:balance}
     <button class="btn btn-ghost" id="h-resume" type="button" hidden></button>
   </div>
 
-  <div class="opts">
-    <label class="sw" for="opt-beep"><input type="checkbox" id="opt-beep" checked> Сигналы и вибрация</label>
-    <label class="sw" for="opt-voice"><input type="checkbox" id="opt-voice" checked> Голосовые подсказки</label>
-    <label class="sw" for="opt-music"><input type="checkbox" id="opt-music" checked> Музыка во время упражнений</label>
-    <div class="themes"><span id="theme-lbl">Тема</span>
-      <div class="seg" role="radiogroup" aria-labelledby="theme-lbl">
-        <button type="button" role="radio" id="th-auto" data-th="auto">Авто</button>
-        <button type="button" role="radio" id="th-light" data-th="light">Светлая</button>
-        <button type="button" role="radio" id="th-dark" data-th="dark">Тёмная</button>
-      </div>
-    </div>
-    <p class="note" id="voice-note" hidden>На этом устройстве нет русского голоса для подсказок — останутся звуковые сигналы.</p>
-  </div>
-
-  <div id="h-blocks" class="blk-list"></div>
+  <div id="h-blocks" class="blk-list" role="tabpanel"></div>
+  <p class="foot"><span id="h-ver"></span> · <button type="button" id="h-about">Важно о занятиях</button></p>
 </div>
 
 <section class="screen" id="work" hidden aria-label="Тренировка">
@@ -328,6 +342,80 @@ h1,h2,h3{text-wrap:balance}
     <button class="btn btn-main" id="d-home" type="button">На главную</button>
   </div>
 </section>
+
+<section class="screen" id="settings" hidden aria-label="Настройки">
+  <header class="wbar">
+    <button class="ibtn" id="s-back" type="button" aria-label="Назад">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="wbar-t"><span style="font-weight:700;font-size:17px">Настройки</span></div>
+    <span style="width:44px"></span>
+  </header>
+  <div class="wmain"><div class="wcol">
+    <section class="set-sec"><h3>Звук и оформление</h3>
+      <div class="opts">
+        <label class="sw" for="opt-beep"><input type="checkbox" id="opt-beep" checked> Сигналы и вибрация</label>
+        <label class="sw" for="opt-voice"><input type="checkbox" id="opt-voice" checked> Голосовые подсказки</label>
+        <label class="sw" for="opt-music"><input type="checkbox" id="opt-music" checked> Музыка во время упражнений</label>
+        <div class="themes"><span id="theme-lbl">Тема</span>
+          <div class="seg" role="radiogroup" aria-labelledby="theme-lbl">
+            <button type="button" role="radio" id="th-auto" data-th="auto">Авто</button>
+            <button type="button" role="radio" id="th-light" data-th="light">Светлая</button>
+            <button type="button" role="radio" id="th-dark" data-th="dark">Тёмная</button>
+          </div>
+        </div>
+        <p class="note" id="voice-note" hidden>На этом устройстве нет русского голоса для подсказок — останутся звуковые сигналы.</p>
+      </div>
+    </section>
+    <section class="set-sec"><h3>Напоминание</h3>
+      <p>Ежедневное событие в календаре телефона — календарь сам напомнит о занятии.</p>
+      <div class="set-row"><label for="rem-time">Время</label><input type="time" id="rem-time" value="18:00"></div>
+      <div class="set-row">
+        <a class="btn btn-main" id="rem-google" href="#" target="_blank" rel="noopener">Google Календарь</a>
+        <button class="btn btn-ghost" id="rem-ics" type="button">Файл для календаря</button>
+      </div>
+      <p class="small">«Google Календарь» откроет готовое событие с повтором каждый день — останется нажать «Сохранить».</p>
+    </section>
+    <section class="set-sec"><h3>Резервная копия прогресса</h3>
+      <p>Серия, медали и настройки хранятся только на этом телефоне. Сохраните код копии — по нему прогресс можно восстановить после очистки данных или на новом телефоне.</p>
+      <div class="set-row">
+        <button class="btn btn-main" id="bk-make" type="button">Создать код копии</button>
+        <button class="btn btn-ghost" id="bk-copy" type="button" hidden>Скопировать</button>
+      </div>
+      <label for="bk-code" class="small">Код копии. Чтобы восстановить прогресс, вставьте сюда код и нажмите «Восстановить».</label>
+      <textarea id="bk-code" spellcheck="false" placeholder="SS1:…"></textarea>
+      <div class="set-row"><button class="btn btn-ghost" id="bk-restore" type="button">Восстановить</button></div>
+      <p class="small" id="bk-msg" role="status"></p>
+    </section>
+    <section class="set-sec"><h3>Важно о занятиях</h3>
+      <p id="s-disclaimer"></p>
+    </section>
+    <section class="set-sec"><h3>О приложении</h3>
+      <p id="s-ver"></p>
+      <p class="small">Приложение ничего не отправляет в интернет: прогресс и настройки хранятся только на телефоне. Музыка, схемы и мотивирующие фразы без подписи созданы для приложения. Авторство цитат с пометкой «приписывается» не подтверждено.</p>
+    </section>
+  </div></div>
+</section>
+
+<div class="sheet" id="sh-ack" hidden role="dialog" aria-modal="true" aria-labelledby="ack-t">
+  <div class="sheet-c">
+    <h2 id="ack-t">Перед началом</h2>
+    <div class="warn" id="ack-text"></div>
+    <button class="btn btn-main" id="ack-ok" type="button">Понятно</button>
+  </div>
+</div>
+
+<div class="sheet" id="sh-eq" hidden role="dialog" aria-modal="true" aria-labelledby="eq-t">
+  <div class="sheet-c">
+    <h2 id="eq-t">Что подготовить</h2>
+    <p id="eq-sub"></p>
+    <ul class="eq" id="eq-list"></ul>
+    <div class="row2">
+      <button class="btn btn-ghost" id="eq-cancel" type="button">Отмена</button>
+      <button class="btn btn-main" id="eq-go" type="button">Начать</button>
+    </div>
+  </div>
+</div>
 
 <section class="screen splash" id="splash" hidden aria-label="Цитата дня">
   <div class="splash-c">
@@ -927,6 +1015,8 @@ var SHORT_BLOCKS=[
   pick("Тряпочки")
  ]}
 ];
+var EQ={mat:"Коврик для пола",chair:"Устойчивый стул без колёсиков",wall:"Свободный участок стены",towel:"Полотенце или тонкий платок",bottle:"Бутылка воды 0,5 л — груз для «Собери платок»",items:"15–20 мелких предметов и коробка — для «Уборки»",pin:"Скалка или гладкая гимнастическая палка",spiky:"Массажный мячик 6–8 см («ёжик»)",tball:"Мяч размером с теннисный",pencil:"Карандаш или фломастер и лист бумаги"};
+var EQ_BY={"Рисуем круги ногами":["chair"],"Тянем носочки":["chair"],"Ладошки":["mat"],"Аплодисменты":["mat"],"Дворники":["mat"],"Гусеница":["chair"],"Собери платок":["chair","towel","bottle"],"Уборка":["chair","items"],"Скалка":["chair","pin"],"Ёжик":["chair","spiky"],"Художник":["chair","pencil"],"Короткая стопа":["chair"],"Подъём на носки":["chair","tball"],"Канатоходец":["pin","chair"],"Пять точек":["wall"],"Ангел на стене":["wall"],"Стульчик":["wall","tball"],"Велосипед":["mat"],"Растяжка с полотенцем":["mat","towel"],"Растяжка у стены":["wall"],"Тряпочки":["mat","wall"]};
 var PLANS={short:{title:"30 минут",blocks:SHORT_BLOCKS},full:{title:"Полный",blocks:FULL_BLOCKS}};
 function flatten(blocks){
   var out=[];
@@ -1411,7 +1501,8 @@ function pips(done,cur){
 var REDUCED=false;try{REDUCED=window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
 var animCur=null,animT0=0,animRAF=0,animLast=0;
 function drawAnim(){if(!animCur)return;var p=REDUCED?0.3:((now()-animT0)/1000/animCur.T)%1;$("w-anim-svg").innerHTML=animCur.f(p);}
-function animLoop(ts){animRAF=0;if(S.view!=="work"||!animCur)return;if(ts-animLast>=33){animLast=ts;drawAnim();}animRAF=requestAnimationFrame(animLoop);}
+var animVisible=true;
+function animLoop(ts){animRAF=0;if(S.view!=="work"||!animCur||document.hidden)return;if(animVisible&&ts-animLast>=50){animLast=ts;drawAnim();}animRAF=requestAnimationFrame(animLoop);} // 20 кадров в секунду, пауза вне экрана
 function startAnim(){animCur=AN[ex().anim]||null;animT0=now();drawAnim();if(!REDUCED&&!animRAF)animRAF=requestAnimationFrame(animLoop);}
 function stopAnim(){if(animRAF)cancelAnimationFrame(animRAF);animRAF=0;}
 
@@ -1435,20 +1526,85 @@ function applyTheme(t){
   ["auto","light","dark"].forEach(function(id){var b=$("th-"+id);if(b)b.setAttribute("aria-checked",(t===id||(id==="auto"&&t!=="light"&&t!=="dark"))?"true":"false");});
 }
 
+/* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
+var APP_VERSION="1.6",APP_DATE="08.11.2026";
+var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
+function openSheet(id){$(id).hidden=false;}
+function closeSheet(id){$(id).hidden=true;}
+function disclaimerHTML(){return DISCLAIMER.split(/(?<=\.) /).map(function(s){return "<p>"+s+"</p>";}).join("");}
+function maybeAck(){if(!store.get("ss_ack",false)){$("ack-text").innerHTML=disclaimerHTML();openSheet("sh-ack");}}
+function planEquipment(){var need={};EX.forEach(function(e){(EQ_BY[e.short]||[]).forEach(function(k){need[k]=1;});});return Object.keys(EQ).filter(function(k){return need[k];});}
+function showEquipment(){
+  var list=$("eq-list");list.textContent="";
+  planEquipment().forEach(function(k){
+    var li=document.createElement("li");li.innerHTML='<label for="eq-'+k+'"><input type="checkbox" id="eq-'+k+'"><span></span></label>';
+    li.querySelector("span").textContent=EQ[k];list.appendChild(li);
+  });
+  $("eq-sub").textContent="Вариант «"+PLANS[PLAN].title+"». Отметьте то, что уже под рукой, или сразу нажмите «Начать».";
+  openSheet("sh-eq");
+}
+function pad2(n){return String(n).padStart(2,"0");}
+function remDates(){
+  var tv=($("rem-time").value||"18:00").split(":"),d=new Date();d.setDate(d.getDate()+1);d.setHours(+tv[0]||0,+tv[1]||0,0,0);
+  var e=new Date(d.getTime()+30*60000),f=function(x){return x.getFullYear()+pad2(x.getMonth()+1)+pad2(x.getDate())+"T"+pad2(x.getHours())+pad2(x.getMinutes())+"00";};
+  return [f(d),f(e)];
+}
+var REM_TITLE="Сильные стопы — гимнастика",REM_TEXT="Ежедневное занятие для стоп в приложении «Сильные стопы».";
+function updateRemLink(){
+  var dd=remDates(),tz="";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"";}catch(e){}
+  $("rem-google").href="https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(REM_TITLE)+"&details="+encodeURIComponent(REM_TEXT)+"&dates="+dd[0]+"/"+dd[1]+"&recur="+encodeURIComponent("RRULE:FREQ=DAILY")+(tz?"&ctz="+encodeURIComponent(tz):"");
+}
+function downloadICS(){
+  var dd=remDates();
+  var ics=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Silnye Stopy//RU","BEGIN:VEVENT","UID:"+Date.now()+"@silnye-stopy","DTSTAMP:"+dd[0],"DTSTART:"+dd[0],"DTEND:"+dd[1],"RRULE:FREQ=DAILY","SUMMARY:"+REM_TITLE,"DESCRIPTION:"+REM_TEXT,"BEGIN:VALARM","TRIGGER:PT0M","ACTION:DISPLAY","DESCRIPTION:"+REM_TITLE,"END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
+  try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"}));a.download="silnye-stopy-napominanie.ics";document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);toast("Файл скачан — откройте его в календаре");}
+  catch(e){toast("Не удалось скачать файл — нажмите «Google Календарь»");}
+}
+function b64e(s){return btoa(unescape(encodeURIComponent(s)));}
+function b64d(s){return decodeURIComponent(escape(atob(s)));}
+function makeBackup(){
+  var data={v:1,hist:store.get("ss_hist",[]),set:store.get("ss_set",{}),plan:store.get("ss_plan","short"),theme:store.get("ss_theme","auto"),rem:store.get("ss_rem","18:00")};
+  $("bk-code").value="SS1:"+b64e(JSON.stringify(data));$("bk-copy").hidden=false;
+  $("bk-msg").textContent="Код создан, занятий в копии: "+data.hist.length+". Сохраните его, например в заметках или в сообщении самой себе.";
+}
+function copyBackup(){
+  var t=$("bk-code");
+  try{navigator.clipboard.writeText(t.value).then(function(){toast("Код скопирован");},function(){t.select();toast("Код выделен — скопируйте вручную");});}
+  catch(e){t.select();toast("Код выделен — скопируйте вручную");}
+}
+function restoreBackup(){
+  var raw=($("bk-code").value||"").replace(/\s+/g,""),msg=$("bk-msg");
+  try{
+    if(raw.indexOf("SS1:")!==0)throw 0;
+    var d=JSON.parse(b64d(raw.slice(4)));
+    if(!d||!Array.isArray(d.hist))throw 0;
+    var ok=d.hist.filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}),all={};
+    store.get("ss_hist",[]).concat(ok).forEach(function(k){all[k]=1;});
+    store.set("ss_hist",Object.keys(all).sort());
+    if(d.set&&typeof d.set==="object"){SET=Object.assign(SET,d.set);store.set("ss_set",SET);}
+    if(d.theme){store.set("ss_theme",d.theme);applyTheme(d.theme);}
+    if(d.rem){store.set("ss_rem",d.rem);$("rem-time").value=d.rem;updateRemLink();}
+    syncSettings();renderHome();
+    msg.textContent="Готово. Восстановлено занятий: "+ok.length+", всего теперь: "+Object.keys(all).length+".";
+  }catch(e){msg.textContent="Не получилось: код повреждён или скопирован не полностью. Он начинается с «SS1:» — вставьте его целиком.";}
+}
+function syncSettings(){$("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;$("opt-music").checked=!!SET.music;}
+function openSettings(){syncSettings();show("settings");var wm=document.querySelector("#settings .wmain");if(wm)wm.scrollTop=0;}
+
 /* ---------- Quotes splash ---------- */
-var QUOTES=[{"t": "Без дисциплины не имеет значения, насколько ты хорош. Без дисциплины ты ничто", "a": "Майк Тайсон"}, {"t": "Сильный характер выковывается, только когда преодолеваешь сопротивление — и в спортивном зале, и в жизни", "a": "Арнольд Шварценеггер"}, {"t": "Победит не тот, кто сильнее, а тот, кто готов идти до конца", "a": "Федор Емельяненко"}, {"t": "Способность побеждать самого себя, без сомнения, является самым ценным из всего, что дарит спорт", "a": "Ольга Корбут"}, {"t": "Триумф не дарует настоящей силы, её формирует борьба", "a": "Арнольд Шварценеггер"}, {"t": "Я промахнулся более 9000 раз за карьеру. Проиграл почти 300 матчей. 26 раз мне доверяли победный бросок — и я промахивался. Я терпел неудачи снова и снова. Именно поэтому я преуспел", "a": "Майкл Джордан"}, {"t": "Многие люди терпят неудачу только потому, что сдаются в двух шагах от успеха", "a": "Саймон Хартли"}, {"t": "Я ненавидел каждую минуту тренировки, но я сказал себе: „Не уходи, страдай сейчас и живи всю оставшуюся жизнь чемпионом“", "a": "Мохаммед Али"}, {"t": "Самые трудные дни — это лучшие дни, потому что именно там создаются чемпионы", "a": "Гэби Дуглас"}, {"t": "Если ты чувствуешь, что сдаёшься, вспомни, ради чего ты держался до этого", "a": "Джаред Лето"}, {"t": "Теннис — это 90% психология. Остальное — техника", "a": "Бьорн Борг"}, {"t": "Если ты не контролируешь свой ум, ты не сможешь контролировать игру", "a": "Новак Джокович"}, {"t": "Настрой — это всё. Ты можешь быть в лучшей форме, но, если голова сдалась — ты проиграл", "a": "Джон Макинрой"}, {"t": "Тело достигает того, во что верит разум", "a": ""}, {"t": "Первый раунд выигрывается не кулаками, а уверенностью", "a": "Джордж Форман"}, {"t": "Если ваш уровень не растет, он снижается", "a": "Джим Афремов"}, {"t": "Я делаю то, что другие не делают, поэтому завтра сделаю то, чего другие не могут", "a": ""}, {"t": "Начните оттуда, где вы сейчас находитесь. Используйте то, что у вас есть, и делайте всё, что можете", "a": "Артур Эш"}, {"t": "Каждый день — это еще один шанс изменить свою жизнь", "a": ""}, {"t": "В каждом матче я играю одинаково — так, как будто это финал", "a": "Лионель Месси"}, {"t": "Победа — лучший способ пережить поражение", "a": "Александр Овечкин"}, {"t": "Если ты хочешь быть лучше остальных, то приготовься делать то, что остальные не хотят делать", "a": "Майкл Фелпс"}, {"t": "Путь к победе нужно спокойно подготовить, тогда и результат будет", "a": "Инна Дериглазова"}, {"t": "Мой главный соперник — это я сама. Я всегда боролась только с самой собой", "a": "Елена Исинбаева"}, {"t": "Спящему не достанется ничего, кроме снов", "a": "Серена Уильямс"}, {"t": "Каждый день надо тренироваться так, чтобы следующая тренировка была лучше прошлой!", "a": ""}, {"t": "Занятия спортом никогда не бывают лишними", "a": ""}, {"t": "Я не перестаю тренироваться, и это с каждой минутой укрепляет мой дух и тело", "a": ""}, {"t": "Мне подвластно покорение любых вершин", "a": ""}, {"t": "Всегда выбирайте самый трудный путь — на нём вы не встретите конкурентов", "a": "Шарль де Голль"}, {"t": "Вы можете быть кем угодно, если вы уделите этому время", "a": "Конор Макгрегор"}];
+var QUOTES=[{"t": "Без дисциплины не имеет значения, насколько ты хорош. Без дисциплины ты ничто", "a": "Майк Тайсон", "p": 1}, {"t": "Сильный характер выковывается, только когда преодолеваешь сопротивление — и в спортивном зале, и в жизни", "a": "Арнольд Шварценеггер", "p": 1}, {"t": "Победит не тот, кто сильнее, а тот, кто готов идти до конца", "a": "Федор Емельяненко", "p": 1}, {"t": "Способность побеждать самого себя, без сомнения, является самым ценным из всего, что дарит спорт", "a": "Ольга Корбут", "p": 1}, {"t": "Триумф не дарует настоящей силы, её формирует борьба", "a": "Арнольд Шварценеггер", "p": 1}, {"t": "Я промахнулся более 9000 раз за карьеру. Проиграл почти 300 матчей. 26 раз мне доверяли победный бросок — и я промахивался. Я терпел неудачи снова и снова. Именно поэтому я преуспел", "a": "Майкл Джордан"}, {"t": "Многие люди терпят неудачу только потому, что сдаются в двух шагах от успеха", "a": "Саймон Хартли", "p": 1}, {"t": "Я ненавидел каждую минуту тренировки, но я сказал себе: „Не уходи, страдай сейчас и живи всю оставшуюся жизнь чемпионом“", "a": "Мохаммед Али", "p": 1}, {"t": "Самые трудные дни — это лучшие дни, потому что именно там создаются чемпионы", "a": "Гэби Дуглас", "p": 1}, {"t": "Если ты чувствуешь, что сдаёшься, вспомни, ради чего ты держался до этого", "a": "Джаред Лето", "p": 1}, {"t": "Теннис — это 90% психология. Остальное — техника", "a": "Бьорн Борг", "p": 1}, {"t": "Если ты не контролируешь свой ум, ты не сможешь контролировать игру", "a": "Новак Джокович", "p": 1}, {"t": "Настрой — это всё. Ты можешь быть в лучшей форме, но, если голова сдалась — ты проиграл", "a": "Джон Макинрой", "p": 1}, {"t": "Тело достигает того, во что верит разум", "a": ""}, {"t": "Первый раунд выигрывается не кулаками, а уверенностью", "a": "Джордж Форман", "p": 1}, {"t": "Если ваш уровень не растет, он снижается", "a": "Джим Афремов", "p": 1}, {"t": "Я делаю то, что другие не делают, поэтому завтра сделаю то, чего другие не могут", "a": ""}, {"t": "Начните оттуда, где вы сейчас находитесь. Используйте то, что у вас есть, и делайте всё, что можете", "a": "Артур Эш", "p": 1}, {"t": "Каждый день — это еще один шанс изменить свою жизнь", "a": ""}, {"t": "В каждом матче я играю одинаково — так, как будто это финал", "a": "Лионель Месси", "p": 1}, {"t": "Победа — лучший способ пережить поражение", "a": "Александр Овечкин", "p": 1}, {"t": "Если ты хочешь быть лучше остальных, то приготовься делать то, что остальные не хотят делать", "a": "Майкл Фелпс", "p": 1}, {"t": "Путь к победе нужно спокойно подготовить, тогда и результат будет", "a": "Инна Дериглазова", "p": 1}, {"t": "Мой главный соперник — это я сама. Я всегда боролась только с самой собой", "a": "Елена Исинбаева", "p": 1}, {"t": "Спящему не достанется ничего, кроме снов", "a": "Серена Уильямс", "p": 1}, {"t": "Каждый день надо тренироваться так, чтобы следующая тренировка была лучше прошлой!", "a": ""}, {"t": "Занятия спортом никогда не бывают лишними", "a": ""}, {"t": "Я не перестаю тренироваться, и это с каждой минутой укрепляет мой дух и тело", "a": ""}, {"t": "Мне подвластно покорение любых вершин", "a": ""}, {"t": "Всегда выбирайте самый трудный путь — на нём вы не встретите конкурентов", "a": "Шарль де Голль", "p": 1}, {"t": "Вы можете быть кем угодно, если вы уделите этому время", "a": "Конор Макгрегор", "p": 1}, {"t": "Каждое занятие — ещё один кирпичик в своде твоей стопы", "a": ""}, {"t": "Маленькие шаги каждый день дают большой результат", "a": ""}, {"t": "Сильные стопы — фундамент для всего, что ты захочешь сделать", "a": ""}, {"t": "Сегодняшние полчаса — вклад в то, как ты будешь ходить через десять лет", "a": ""}, {"t": "Не обязательно быть лучшим. Обязательно — не пропускать", "a": ""}, {"t": "Регулярность сильнее таланта", "a": ""}, {"t": "Медаль за неделю достаётся тем, кто не сдаётся на четвёртый день", "a": ""}, {"t": "Тело запоминает то, что ты повторяешь", "a": ""}, {"t": "Сделал сегодня — завтра будет легче", "a": ""}, {"t": "Чемпионы тоже начинали с простых упражнений", "a": ""}, {"t": "Пять минут разминки лучше, чем ноль", "a": ""}, {"t": "Своды стопы растут вместе с тобой — помоги им", "a": ""}];
 var splashT=null;
 function showSplash(){
   var last=store.get("ss_q",-1),i=Math.floor(Math.random()*QUOTES.length);
   if(QUOTES.length>1&&i===last)i=(i+1)%QUOTES.length;
   store.set("ss_q",i);
   $("q-text").textContent=QUOTES[i].t;
-  var au=$("q-author");au.textContent=QUOTES[i].a?"— "+QUOTES[i].a:"";au.hidden=!QUOTES[i].a;
+  var au=$("q-author");au.textContent=QUOTES[i].a?(QUOTES[i].p?"— приписывается: ":"— ")+QUOTES[i].a:"";au.hidden=!QUOTES[i].a;
   var sp=$("splash");sp.hidden=false;sp.classList.remove("go");void sp.offsetWidth;sp.classList.add("go");
   var dur=Math.min(11000,Math.max(4500,2000+QUOTES[i].t.length*55));sp.querySelector(".splash-bar i").style.transitionDuration=dur+"ms";
   clearTimeout(splashT);splashT=setTimeout(hideSplash,dur);
 }
-function hideSplash(){clearTimeout(splashT);$("splash").hidden=true;}
+function hideSplash(){clearTimeout(splashT);var was=!$("splash").hidden;$("splash").hidden=true;if(was)maybeAck();}
 
 /* ---------- Medals ---------- */
 var MEDAL='<svg viewBox="0 0 24 28" class="md%C%" aria-hidden="true"><path d="M6 0h5l2 9-4 3z" class="md-r"/><path d="M18 0h-5l-2 9 4 3z" class="md-r"/><circle cx="12" cy="18" r="9" class="md-c"/><text x="12" y="21.5" text-anchor="middle" class="md-t">7</text></svg>';
@@ -1470,7 +1626,6 @@ function streak(){
   while(h.indexOf(dkey(d))>=0){c++;d.setDate(d.getDate()-1);}
   return c;
 }
-var WD=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
 function renderHome(){
   var h=store.get("ss_hist",[]),s=streak();
   $("h-streak").textContent=s;
@@ -1498,7 +1653,7 @@ function planSec(id){return PLANS[id].blocks.reduce(function(a,b){return a+b.ex.
 function renderTabs(){
   ["short","full"].forEach(function(id){
     var t=$("tab-"+id),n=PLANS[id].blocks.reduce(function(x,b){return x+b.ex.length;},0);
-    t.setAttribute("aria-selected",PLAN===id?"true":"false");
+    t.setAttribute("aria-selected",PLAN===id?"true":"false");t.tabIndex=PLAN===id?0:-1;t.setAttribute("aria-controls","h-blocks");
     t.querySelector("small").textContent="≈ "+Math.round(planSec(id)/60)+" мин · "+n+" упр.";
   });
 }
@@ -1531,7 +1686,7 @@ function buildBlocks(){
 /* ---------- Views ---------- */
 function show(v){
   S.view=v;
-  $("work").hidden=v!=="work";$("done").hidden=v!=="done";
+  $("work").hidden=v!=="work";$("done").hidden=v!=="done";$("settings").hidden=v!=="settings";
   if(v!=="work"){stopAnim();musicStop();}
   if(v==="home"){renderHome();window.scrollTo(0,0);}
 }
@@ -1552,7 +1707,8 @@ function closeWork(){
 function start(data){
   usePlan(store.get("ss_plan","short"));
   buildBlocks();renderTabs();
-  ["short","full"].forEach(function(id){$("tab-"+id).addEventListener("click",function(){if(PLAN!==id)setPlan(id);});});
+  ["short","full"].forEach(function(id){$("tab-"+id).addEventListener("click",function(){if(PLAN!==id)setPlan(id);});
+    $("tab-"+id).addEventListener("keydown",function(e){if(e.key==="ArrowLeft"||e.key==="ArrowRight"){var o=id==="short"?"full":"short";setPlan(o);$("tab-"+o).focus();e.preventDefault();}});});
   $("opt-beep").checked=!!SET.beep;$("opt-voice").checked=!!SET.voice;
   $("opt-beep").addEventListener("change",function(e){SET.beep=e.target.checked;store.set("ss_set",SET);if(SET.beep){unlock();tone("ready");}});
   applyTheme(store.get("ss_theme","auto"));
@@ -1560,7 +1716,24 @@ function start(data){
   $("opt-music").checked=!!SET.music;
   $("opt-music").addEventListener("change",function(e){SET.music=e.target.checked;store.set("ss_set",SET);updateMusic();});
   $("opt-voice").addEventListener("change",function(e){SET.voice=e.target.checked;store.set("ss_set",SET);loadVoices();if(SET.voice){primed=false;primeSpeech();say("Подсказки включены");}});
-  $("h-start").addEventListener("click",function(){startFrom(0);});
+  $("h-start").addEventListener("click",function(){unlock();showEquipment();});
+  $("eq-go").addEventListener("click",function(){closeSheet("sh-eq");startFrom(0);});
+  $("eq-cancel").addEventListener("click",function(){closeSheet("sh-eq");});
+  $("sh-eq").addEventListener("click",function(e){if(e.target===this)closeSheet("sh-eq");});
+  $("ack-ok").addEventListener("click",function(){store.set("ss_ack",true);closeSheet("sh-ack");});
+  $("h-settings").addEventListener("click",openSettings);
+  $("s-back").addEventListener("click",function(){show("home");});
+  $("h-about").addEventListener("click",function(){$("ack-text").innerHTML=disclaimerHTML();openSheet("sh-ack");});
+  $("s-disclaimer").textContent=DISCLAIMER;
+  $("s-ver").textContent="Версия "+APP_VERSION+" от "+APP_DATE+".";
+  $("h-ver").textContent="Версия "+APP_VERSION;
+  $("rem-time").value=store.get("ss_rem","18:00");updateRemLink();
+  $("rem-time").addEventListener("change",function(){store.set("ss_rem",this.value);updateRemLink();});
+  $("rem-ics").addEventListener("click",downloadICS);
+  $("bk-make").addEventListener("click",makeBackup);
+  $("bk-copy").addEventListener("click",copyBackup);
+  $("bk-restore").addEventListener("click",restoreBackup);
+
   $("h-resume").addEventListener("click",function(e){startFrom(parseInt(e.currentTarget.dataset.ex,10)||0);});
   $("w-main").addEventListener("click",mainAction);
   $("w-skip").addEventListener("click",skipAction);
@@ -1570,6 +1743,7 @@ function start(data){
   $("d-home").addEventListener("click",function(){show("home");});
   $("splash").addEventListener("click",hideSplash);
   document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"){if(!$("sh-eq").hidden){closeSheet("sh-eq");return;}if(S.view==="settings"){show("home");return;}}
     if(S.view!=="work")return;
     if(e.code==="Space"&&e.target.tagName!=="BUTTON"){e.preventDefault();mainAction();}
     else if(e.key==="ArrowRight")skipAction();
@@ -1582,6 +1756,8 @@ function start(data){
     if(S.view==="work"&&(S.phase==="run"||S.phase==="manual"))wake(true);
   });
   setInterval(tick,100);
+  try{new IntersectionObserver(function(es){animVisible=es[0].isIntersecting;}).observe(document.querySelector(".anim"));}catch(e){}
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.view==="work"&&animCur&&!animRAF&&!REDUCED)animRAF=requestAnimationFrame(animLoop);});
 
   renderHome();
   if(!(data&&data.view))showSplash();

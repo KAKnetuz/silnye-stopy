@@ -1,0 +1,12 @@
+{
+  "name": "silnye-stopy",
+  "private": true,
+  "description": "Автотесты приложения «Сильные стопы»",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/smoke.test.js"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}
