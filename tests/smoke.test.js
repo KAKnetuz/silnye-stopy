@@ -154,3 +154,14 @@ test("PWA: оболочка кэшируется атомарно и с верс
     assert.ok((await stat(file)).isFile(), `отсутствует офлайн-ресурс: ${item}`);
   }
 });
+
+
+test("схема «Короткая стопа» не выдаёт рисунок за диагностический отпечаток", async () => {
+  const src = await readFile(join(ROOT, "js/anim.js"), "utf8");
+  assert.match(src, /A\.shortfoot=\{T:4/);
+  const block = src.split("A.shortfoot={T:4")[1].split("A.tightrope=")[0];
+  assert.match(block, /схема опоры/);
+  assert.match(block, /свод активирован/);
+  assert.match(block, /пальцы на полу/);
+  assert.doesNotMatch(block, /стопа плоская|появилась выемка свода|отпечаток стопы/);
+});
