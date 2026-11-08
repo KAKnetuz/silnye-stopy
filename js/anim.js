@@ -874,8 +874,52 @@ var ANIME_STUDIES={
   rollouts:{label:"опора снаружи",view:"top",rot:0,spread:15,curl:0},
   hedgehog:{label:"перекат мяча и захват",view:"side",rot:0,spread:0,curl:0.6},
 };
+function motionDetail(name,p){
+  var u=ease(p),s='<path d="M4 128H236" class="fl"/>';
+  if(name==="heron"){
+    // Support leg is stationary; the other knee rises, not the supporting foot.
+    s+=tx(8,139,"Цапля: стойка на одной ноге","cap","start");
+    s+=ln([72,169],[158,169],"fl")+footSide(80,169,{sc:.7,shin:30});
+    s+=ln([105,144],[126,144-15*u],"sk")+ln([126,144-15*u],[144,157-22*u],"sk");
+    s+=ci([126,144-15*u],3,"prf")+arrow([160,160],[160,160-22*u]);
+  }else if(name==="angel"||name==="fivepoints"){
+    var arm=name==="angel",y=158-17*u;
+    s+=tx(8,139,arm?"Ангел: руки скользят по стене":"Осанка: шаг от стены","cap","start");
+    s+='<rect x="96" y="143" width="4" height="30" class="wall"/>';
+    var x=arm?120:120+20*u;
+    s+=ci([x,148],5,"sk")+ln([x,153],[x,165],"sk");
+    s+=ln([x,156],[x-12,arm?y:158],"sk")+ln([x,156],[x+12,arm?y:158],"sk");
+    s+=ln([x,165],[x-8,173],"sk")+ln([x,165],[x+8,173],"sk");
+    s+=arrow(arm?[170,165]:[145,173],arm?[170,146]:[167,173]);
+  }else if(name==="wallsit"){
+    s+=tx(8,139,"Стульчик: спина у стены","cap","start");
+    s+='<rect x="62" y="144" width="5" height="30" class="wall"/>';
+    var h=148+12*u;
+    s+=ci([78,h-7],5,"sk")+ln([77,h-2],[78,h+11],"sk");
+    s+=ln([78,h+11],[101,164],"sk")+ln([101,164],[111,173],"sk");
+    s+=ln([78,h+11],[95,166],"sk")+ln([95,166],[102,173],"sk");
+    s+=arrow([150,147],[150,164]);
+  }else if(name==="rollpin"||name==="hedgehog"){
+    var ball=name==="hedgehog",x=83+26*u,rad=ball?9:7;
+    s+=tx(8,139,ball?"Ёжик: катим и захватываем":"Скалка: перекат под сводом","cap","start");
+    s+=ln([35,174],[173,174],"fl");
+    if(ball){s+=ci([x,166],rad,"ball");for(var i=0;i<10;i++){var a=i*PI/5;s+=ln([x+rad*Math.cos(a),166+rad*Math.sin(a)],[x+(rad+2)*Math.cos(a),166+(rad+2)*Math.sin(a)],"pr");}}
+    else{s+='<rect x="'+f1(x-6)+'" y="160" width="12" height="14" rx="5" class="ball"/>'+ln([x,160],[x,174],"pr");}
+    s+=footSide(61+19*u,160,{sc:.92,shin:24,curl:ball?u*.65:0});
+    s+=arrow([85,146],[112,146]);
+  }else if(name==="tightrope"){
+    s+=tx(8,139,"Канатоходец: приставной шаг","cap","start");
+    s+=ln([37,164],[195,164],"pr");
+    var d=18*u;
+    s+=footTop(83+d,167,{sc:.65,rot:90});
+    s+=footTop(117+d*.5,167,{sc:.65,rot:90,mir:1});
+    s+=arrow([141,147],[141+18*u,147]);
+  }else return null;
+  return s+tx(231,163,u>.5?"движение":"исходно",u>.5?"capa":"cap","end");
+}
 function animeStudy(name,p){
   var o=ANIME_STUDIES[name];if(!o)return "";
+  var custom=motionDetail(name,p);if(custom!==null)return custom;
   var t=ease(p),a=t*o.rot,spread=t*o.spread,cu=t*o.curl;
   var s='<path d="M4 128H236" class="fl"/>'+tx(8,139,o.label,"cap","start");
   // Foot close-up: movement direction is encoded in the geometry, not just arrows.
