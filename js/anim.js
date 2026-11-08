@@ -547,14 +547,25 @@ function bwFigure(p){
   return {svg:s,legs:[L0,L1],G:G};
 }
 A.bear={T:1.6,focus:"shin",f:function(p){
-  var cam=new Cam(1.19,58,70.2),F=bwFigure(p),s=cam.g(F.svg);
-  // лупа: те же стопы спереди, в той же фазе (левая в кадре — правая нога героини)
-  var inner='<g transform="translate(180 18) scale(.98) translate(-178 0)">'+'<ellipse cx="178" cy="102.4" rx="56" ry="3" class="shd"/>'+
-    legFront(156,-1,{tilt:BW.roll,lift:1.7*F.G[0].lift,curl:.35,cuff:1,edge:1})+legFront(200,1,{tilt:BW.roll,lift:1.7*F.G[1].lift,curl:.35,cuff:1,edge:1})+"</g>";
-  var foot=F.G[0].stance?F.legs[0].ank:F.legs[1].ank;
+  // Одна связанная сцена: походка персонажа и синхронный крупный план двух стоп.
+  // Наружный край нагружен только в фазе опоры; при переносе стопа выравнивается.
+  var cam=new Cam(1.35,55,75),F=bwFigure(p),s=cam.g(F.svg);
+  var left=F.G[0],right=F.G[1];
+  function tilt(g){return g.stance?BW.roll:BW.roll*(1-sm(g.k));}
+  var inner='<g transform="translate(180 18) scale(.98) translate(-178 0)">'+
+    '<ellipse cx="178" cy="102.4" rx="56" ry="3" class="shd"/>'+
+    legFront(156,-1,{tilt:tilt(left),lift:1.7*left.lift,curl:.18,cuff:1,edge:1})+
+    legFront(200,1,{tilt:tilt(right),lift:1.7*right.lift,curl:.18,cuff:1,edge:1})+"</g>";
+  var supporting=left.stance?0:1;
+  var foot=F.legs[supporting].ank;
   s+=inset("insBear",[181,79],56,inner,cam.p([foot[0]+4,foot[1]+6]));
-  var a0=cam.p([24,56.6]);s+=arrow([a0[0],a0[1]],[a0[0]+18,a0[1]+4]);                                                                     // направление шага по полу
-  return s+note("наружные края стоп",true);
+  // Подсветка точек контакта только у нагруженной стопы; при переносе точки нет.
+  if(left.stance)s+=ci([168,118],2.8,"acf");
+  if(right.stance)s+=ci([212,118],2.8,"acf");
+  // Указатель направления шага зависит от фазы, а не остаётся статичным.
+  var phase=(p%1)<.5?1:-1;
+  s+=arrow([68,137],[68+phase*17,137]);
+  return s+note("опора на наружный край",true);
 }};
 
 /* 6. Ходьба с перекатом: пятка → вся стопа → носок; оранжевая точка — где сейчас опора */
