@@ -262,7 +262,7 @@ function sketchify(svg){
     var offset="translate("+f1(jit(.45))+" "+f1(jit(.45))+")";
     var composed=match?offset+" "+match[1]:offset;
     attrs=attrs.replace(/\\s*transform="[^"]*"/,"");
-    return all+'<'+tag+attrs.replace(/class="'+c+'"/,'class="'+c+' sk2d"')+' transform="'+composed+'"/>';
+    return all+'<'+tag+a+'class="'+c+' sk2d"'+b.replace(/\\s*transform="[^"]*"/,"")+' transform="'+composed+'"/>';
   });
 }
 
