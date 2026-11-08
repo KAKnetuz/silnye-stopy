@@ -136,3 +136,127 @@ test("работает без интернета после первого за�
   assert.ok((await page.textContent("h1")).includes("Сильные стопы"));
   await ctx.close();
 });
+
+
+test("PWA: оболочка кэшируется атомарно и с версией", async () => {
+  const sw = await readFile(join(ROOT, "sw.js"), "utf8");
+  assert.match(sw, /const CACHE = ["']silnye-stopy-shell-v[\d.]+["']/, "у кэша нет версии");
+  assert.match(sw, /\.addAll\(SHELL\)/, "все ресурсы должны установиться одним набором");
+  assert.match(sw, /cache\.match\(req/, "приложение должно сначала читать установленную оболочку");
+  assert.doesNotMatch(sw, /fetch\(req\)\.then\([^)]*cache\.put/s, "фоновое обновление отдельных файлов запрещено");
+  const shell = sw.match(/const SHELL = \[([\s\S]*?)\];/);
+  assert.ok(shell, "список ресурсов оболочки отсутствует");
+  const entries = [...shell[1].matchAll(/["'](\.\/[^"']+)["']/g)].map(m => m[1]);
+  assert.equal(new Set(entries).size, entries.length, "дубли в списке ресурсов");
+  for (const item of entries) {
+    if (item === "./") continue;
+    const file = join(ROOT, item.slice(2));
+    assert.ok((await stat(file)).isFile(), `отсутствует офлайн-ресурс: ${item}`);
+  }
+});
+
+
+test("схема «Короткая стопа» не выдаёт рисунок за диагностический отпечаток", async () => {
+  const src = await readFile(join(ROOT, "js/anim.js"), "utf8");
+  assert.match(src, /A\.shortfoot=\{T:4/);
+  const block = src.split("A.shortfoot={T:4")[1].split("A.tightrope=")[0];
+  assert.match(block, /схема опоры/);
+  assert.match(block, /свод активирован/);
+  assert.match(block, /пальцы на полу/);
+  assert.doesNotMatch(block, /стопа плоская|появилась выемка свода|отпечаток стопы/);
+});
+
+
+test("«Короткая стопа»: фазы движения сохраняют точки опоры", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const result = await page.evaluate(() => {
+    const exercise = AN.shortfoot;
+    if (!exercise || typeof exercise.f !== "function") return { missing: true };
+    return [0, 0.125, 0.25, 0.5, 0.75].map(phase => {
+      const svg = exercise.f(phase);
+      return { phase, length: svg.length, supports: (svg.match(/class="acf"/g) || []).length,
+        labels: svg.includes("пальцы на полу") && svg.includes("схема опоры"), invalid: /NaN|undefined|Infinity/.test(svg) };
+    });
+  });
+  assert.ok(!result.missing, "нет анимации «Короткая стопа»");
+  for (const frame of result) {
+    assert.ok(frame.length > 300, `пустая фаза ${frame.phase}`);
+    assert.ok(frame.supports >= 2, `нет обеих точек опоры в фазе ${frame.phase}`);
+    assert.ok(frame.labels, `нет инструкций в фазе ${frame.phase}`);
+    assert.ok(!frame.invalid, `некорректная геометрия в фазе ${frame.phase}`);
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+
+test("все 27 аниме-схем имеют содержательные доступные подписи", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+  for (let i = 0; i < 27; i++) {
+    await page.locator(".exr").nth(i).click();
+    const label = await page.locator("#w-anim-svg").getAttribute("aria-label");
+    assert.ok(label && label.includes("Исходное положение:") && label.includes("Движение:"), `нет инструкции в схеме ${i + 1}`);
+    assert.ok(label.length > 65, `слишком короткая инструкция в схеме ${i + 1}`);
+    await page.click("#w-close");
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+
+test("аниме-геометрия: все 27 движений на ключевых фазах", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const frames = await page.evaluate(() => Object.entries(AN)
+    .filter(([, value]) => value && typeof value.f === "function")
+    .flatMap(([name, value]) => [0, 0.25, 0.5, 0.75, 0.99].map(phase => {
+      const raw = value.f(phase);
+      const svg = AN.sketchify(raw);
+      const root = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      root.innerHTML = svg;
+      return { name, phase, length: svg.length, invalid: /NaN|undefined|Infinity/.test(svg),
+        elements: root.querySelectorAll("path,line,polyline,circle,ellipse,rect").length,
+        transforms: [...root.querySelectorAll("[transform]")].every(el => {
+          try { return !!el.transform.baseVal.consolidate() || el.transform.baseVal.numberOfItems === 0; }
+          catch { return false; }
+        }) };
+    })));
+  assert.equal(new Set(frames.map(f => f.name)).size, 27, "количество упражнений изменилось");
+  for (const f of frames) {
+    assert.ok(f.length > 200 && f.elements > 5, `пустая геометрия: ${f.name} / ${f.phase}`);
+    assert.ok(!f.invalid, `неверные координаты: ${f.name} / ${f.phase}`);
+    assert.ok(f.transforms, `некорректное преобразование: ${f.name} / ${f.phase}`);
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+
+test("аниме-скетч: вторичные штрихи сохраняют повороты без дублирования transform", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const outcome = await page.evaluate(() => {
+    const raw = '<path d="M0 0L10 10" class="ft" transform="rotate(20 5 5)"/>';
+    const result = AN.sketchify(raw);
+    const root = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    root.innerHTML = result;
+    const paths = [...root.querySelectorAll("path")];
+    return {
+      count: paths.length,
+      duplicate: /<path[^>]*\btransform="[^"]*"[^>]*\btransform="/.test(result),
+      original: paths[0]?.getAttribute("transform"),
+      secondary: paths[1]?.getAttribute("transform"),
+      secondaryClass: paths[1]?.getAttribute("class")
+    };
+  });
+  assert.equal(outcome.count, 2);
+  assert.equal(outcome.duplicate, false);
+  assert.equal(outcome.original, "rotate(20 5 5)");
+  assert.match(outcome.secondary, /^translate\([^)]+\) rotate\(20 5 5\)$/);
+  assert.match(outcome.secondaryClass, /\bsk2d\b/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

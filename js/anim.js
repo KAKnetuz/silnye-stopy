@@ -254,9 +254,15 @@ function skFront(o){
 /* постобработка остальных элементов схемы под набросок: двойной штрих с дрожанием */
 var SK_CLS={fsd:1,ft:1,ftn:1,pr:1,prf:1,wall:1,ball:1,twl:1,pap:1,solea:1,ac:1,acf:0,fl:1,sd:1};
 function sketchify(svg){
-  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\b([^>]*?)class="([a-z]+)"([^>]*)\/>/g,function(all,tag,a,c,b){
+  return svg.replace(/<(path|circle|ellipse|rect|line|polyline)\b([^>]*?)class="([a-z]+)"([^>]*?)\/>/g,function(all,tag,a,c,b){
     if(!SK_CLS[c])return all;
-    return all+'<'+tag+a+'class="'+c+' sk2d" transform="translate('+f1(jit(.7))+' '+f1(jit(.7))+')"'+b.replace(/transform="[^"]*"/,"")+'/>';
+    // Preserve source transforms and apply only a small secondary pencil offset.
+    // Avoid duplicating an existing transform attribute (invalid SVG).
+    var attrs=a+b,match=attrs.match(/transform="([^"]*)"/);
+    var offset="translate("+f1(jit(.45))+" "+f1(jit(.45))+")";
+    var composed=match?offset+" "+match[1]:offset;
+    var cleaned=attrs.replace(/\s*transform="[^"]*"/g,"");
+    return all+'<'+tag+cleaned.replace(/class="[^"]*"/,"")+' class="'+c+' sk2d" transform="'+composed+'"/>';
   });
 }
 
@@ -349,6 +355,8 @@ function akFront(o){
 function P2(x,y){return f1(x)+" "+f1(y);}
 function footSideSk(x,y,o){
   var sc=o.sc||1.6,s=o.s||0,arch=o.arch||0,cu=o.curl||0,SL=o.shin||44;
+  // Limit decorative exaggeration so the toe and arch geometry remains plausible.
+  s=Math.max(-1,Math.min(1,s));arch=Math.max(-1,Math.min(1.8,arch));cu=Math.max(0,Math.min(1,cu));
   var Lf=40-7*s,bx=Lf-11,bl=4*cu,ah=3+6*arch+2.5*s,tip=bx+11-4*cu;
   // плавный силуэт: подошва повторяет дугу свода (как у выемки под сводом в сцене)
   var pts=[[1,.2],[.231*bx,-.75*ah],[.475*bx,-ah],[.731*bx,-.75*ah],[bx,-bl],[bx+4.5,-bl*.5+.1],[tip-2.6,.2],[tip+.9,-1.9],[tip-.8,-4.5],
@@ -765,17 +773,24 @@ function printToes(cx,cy,mir,cls){
 }
 
 A.shortfoot={T:4,f:function(p){
-  var u=sm(Math.min(1,ease(p)*1.3)),sc=1.55,x=14,y=96,o={sc:sc,arch:1.7*u,s:0.45*u,shin:40};
-  var bx=40-7*o.s-11,ah=3+6*o.arch+2.5*o.s,ax=x+0.45*bx*sc,ballX=x+bx*sc,tipX=x+(bx+11)*sc;
+  // Reference movement: keep heel and toes in contact, shorten the foot gently
+  // without clawing the toes. Diagram is schematic, not a clinical measurement.
+  var u=sm(Math.min(1,ease(p)*1.3)),sc=1.55,x=14,y=96;
+  var o={sc:sc,arch:1.7*u,s:0.45*u,shin:40};
+  var bx=40-7*o.s-11,ah=3+6*o.arch+2.5*o.s;
+  var ax=x+0.45*bx*sc,ballX=x+bx*sc,tipX=x+(bx+11)*sc;
   var s=ln([2,y+1],[132,y+1],"fl");
-  s+=footSide(x,y,{sc:sc,shin:40}).replace(/class="ft[nd]?"/g,'class="gh"');                           // пунктир: стопа расслаблена
-  s+='<g transform="translate('+x+" "+y+") scale("+sc+')"><path d="M0 0Q'+f1(0.45*bx)+" "+f1(-2*ah)+" "+f1(bx)+' 0Z" class="gap"/></g>'+footSide(x,y,o);
-  s+='<g opacity="'+f1(0.25+0.75*u)+'">'+arrow([ax,y-1],[ax,y-4-ah*sc*0.85])+ln([ballX+2,y+5],[tipX,y+5],"ac")+arrow([ballX+6,y+12],[ballX-12,y+12])+"</g>";
+  s+=footSide(x,y,{sc:sc,shin:40}).replace(/class="ft[nd]?"/g,'class="gh"');
+  s+='<g transform="translate('+x+" "+y+") scale("+sc+')"><path d="M0 0Q'+f1(0.45*bx)+" "+f1(-2*ah)+" "+f1(bx)+' 0Z" class="gap"/></g>';
+  s+=footSide(x,y,o);
+  // Both support points stay grounded; only the arch and forefoot approach change.
+  s+=ci([x,y],2.4,"acf")+ci([tipX,y],2.4,"acf");
+  s+='<g opacity="'+f1(0.25+0.75*u)+'">'+arrow([ax,y-1],[ax,y-4-ah*sc*0.85])+arrow([ballX+6,y+12],[ballX-12,y+12])+"</g>";
   s+=tx(3,y+21,"свод вверх",u>0.5?"capa":"cap","start")+tx(116,y+21,"пальцы на полу","cap","end");
   s+=divider();
-  s+=tx(182,10,"отпечаток стопы");
+  s+=tx(182,10,"схема опоры");
   s+='<path d="'+printPath(182,72,u,0)+'" class="solea"/>'+printToes(182,72,0,"solea");
-  s+=tx(182,116,u>0.5?"появилась выемка свода":"стопа плоская",u>0.5?"capa":"cap");
+  s+=tx(182,116,u>0.5?"свод активирован":"стопа расслаблена",u>0.5?"capa":"cap");
   return s;
 }};
 

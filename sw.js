@@ -1,8 +1,6 @@
-// Сервис-воркер «Сильных стоп»: офлайн-режим и быстрый запуск.
-// Стратегия «сначала из памяти, обновление в фоне»: каждый запуск открывается сразу из кэша,
-// а свежая версия файлов скачивается в фоне и появляется со следующего запуска.
-// Поэтому номер версии здесь менять не нужно — обновления приходят сами.
-const CACHE = "silnye-stopy";
+// Offline app shell: a new service-worker revision installs into a separate cache.
+// Never update individual shell files in the active cache: that can mix JS/CSS/HTML versions.
+const CACHE = "silnye-stopy-shell-v1.8";
 const SHELL = ["./", "./index.html", "./styles.css", "./js/core.js", "./js/exercises.js", "./js/anim.js", "./js/audio.js", "./js/app.js",
   "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png",
   "./fonts/GolosText.woff", "./fonts/Unbounded.woff", "./fonts/MartianMono.woff"];
@@ -12,9 +10,9 @@ self.addEventListener("install", e => {
 });
 
 self.addEventListener("activate", e => {
-  // удаляем кэши прошлых версий (silnye-stopy-v2 … v15)
+  // Delete only previous caches owned by this application.
   e.waitUntil(caches.keys()
-    .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(ks => Promise.all(ks.filter(k => k.startsWith("silnye-stopy") && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 
@@ -23,12 +21,21 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  e.respondWith(caches.open(CACHE).then(c => c.match(req, { ignoreSearch: true }).then(hit => {
-    const net = fetch(req).then(res => {
-      if (res && res.ok) c.put(req, res.clone());
-      return res;
-    }).catch(() => hit || (req.mode === "navigate" ? c.match("./index.html") : undefined));
-    if (hit) { e.waitUntil(net.catch(() => {})); return hit; }
-    return net;
-  })));
+  e.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(req, { ignoreSearch: true });
+    if (cached) return cached;
+    try {
+      const response = await fetch(req);
+      // Only cache files outside the pre-cached shell if they are valid same-origin responses.
+      if (response.ok && response.type === "basic") await cache.put(req, response.clone());
+      return response;
+    } catch (error) {
+      if (req.mode === "navigate") {
+        const fallback = await cache.match("./index.html");
+        if (fallback) return fallback;
+      }
+      return Response.error();
+    }
+  })());
 });

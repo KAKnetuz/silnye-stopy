@@ -251,7 +251,9 @@ var animCur=null,animT0=0,animRAF=0,animLast=0;
 var FOCUS_BY={circles:"shin",noski:"shin",soldier:"calf",penguin:"shin",bear:"shin",rollwalk:"arch",ladoshki:"shin",claps:"shin",wipers:null,caterpillar:"arch",towel:"arch",cleanup:"arch",rollpin:"arch",hedgehog:"arch",artist:"arch",shortfoot:"arch",raise:"calf",rollouts:"shin",tightrope:"arch",heron:"calf",fivepoints:null,angel:null,wallsit:"quad",bike:"quad",stowel:"calf",swall:"calf",rags:null};
 function drawAnim(){if(!animCur)return;var t=now(),p=REDUCED?0.3:((t-animT0)/1000/animCur.T)%1;
   AN.setFocus(FOCUS_BY[ex().anim]);AN.seed(REDUCED?7:Math.floor(t/140)*977+3); // линии наброска «дышат» ~7 раз в секунду
-  $("w-anim-svg").innerHTML=AN.sketchify(animCur.f(p));}
+  var svg=$("w-anim-svg");
+  svg.setAttribute("aria-label","Схема упражнения: "+ex().name+". Исходное положение: "+ex().start+". Движение: "+ex().how);
+  svg.innerHTML=AN.sketchify(animCur.f(p));}
 var animVisible=true;
 function animLoop(ts){animRAF=0;if(S.view!=="work"||!animCur||document.hidden)return;if(animVisible&&ts-animLast>=50){animLast=ts;drawAnim();}animRAF=requestAnimationFrame(animLoop);} // 20 кадров в секунду, пауза вне экрана
 function startAnim(){animCur=AN[ex().anim]||null;animT0=now();drawAnim();if(!REDUCED&&!animRAF)animRAF=requestAnimationFrame(animLoop);}
