@@ -205,3 +205,31 @@ test("все 27 аниме-схем имеют содержательные до
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+
+test("аниме-геометрия: все 27 движений на ключевых фазах", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const frames = await page.evaluate(() => Object.entries(AN)
+    .filter(([, value]) => value && typeof value.f === "function")
+    .flatMap(([name, value]) => [0, 0.25, 0.5, 0.75, 0.99].map(phase => {
+      const raw = value.f(phase);
+      const svg = AN.sketchify(raw);
+      const root = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      root.innerHTML = svg;
+      return { name, phase, length: svg.length, invalid: /NaN|undefined|Infinity/.test(svg),
+        elements: root.querySelectorAll("path,line,polyline,circle,ellipse,rect").length,
+        transforms: [...root.querySelectorAll("[transform]")].every(el => {
+          try { return !!el.transform.baseVal.consolidate() || el.transform.baseVal.numberOfItems === 0; }
+          catch { return false; }
+        }) };
+    })));
+  assert.equal(new Set(frames.map(f => f.name)).size, 27, "количество упражнений изменилось");
+  for (const f of frames) {
+    assert.ok(f.length > 200 && f.elements > 5, `пустая геометрия: ${f.name} / ${f.phase}`);
+    assert.ok(!f.invalid, `неверные координаты: ${f.name} / ${f.phase}`);
+    assert.ok(f.transforms, `некорректное преобразование: ${f.name} / ${f.phase}`);
+  }
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
