@@ -170,7 +170,6 @@ function loadVoices(){
       else{ruVoice=local(female)||local(ru.filter(function(v){return !MALE_RE.test(voiceKey(v));}))||local(ru);maleFallback=false;}
     }
     $("voice-note").hidden=!(voicesKnown&&!ruVoice&&SET.voice);
-    var mn=$("voice-male-note");if(mn)mn.hidden=!(SET.vkind==="male"&&maleFallback&&SET.voice);
   }catch(e){}
 }
 var canSpeak=("speechSynthesis" in window)&&("SpeechSynthesisUtterance" in window);
