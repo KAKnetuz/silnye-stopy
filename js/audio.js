@@ -54,7 +54,7 @@ function bell(f,delay,v){
 /* ---------- Music: спокойная непрерывная мелодия для занятий ----------
    Web Audio scheduling uses audio clock; no noise percussion or convolution.
    One persistent master gain avoids pumping caused by repeated render calls. */
-var MVOL=0.13;
+var MVOL=1.3;   // +20 дБ к версии 2.7 (было 0,13): пик ≈ −12 дБ, средний уровень ≈ −27 дБ, без перегрузки; под голосом — четверть
 var MUS={on:false,bus:null,timer:null,next:0,i:0,ducked:false,context:null};
 var MUSIC_STEP=60/76/2; // 76 BPM, eighth-note pulse
 var MUSIC_CHORDS=[
