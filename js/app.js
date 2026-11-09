@@ -279,7 +279,7 @@ function applyTheme(t){
 }
 
 /* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
-var APP_VERSION="2.8",APP_DATE="08.11.2026";
+var APP_VERSION="2.9",APP_DATE="08.11.2026";
 var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
 function openSheet(id){$(id).hidden=false;}
 function closeSheet(id){$(id).hidden=true;}
@@ -475,6 +475,11 @@ function start(data){
     if(SET.voice){primed=false;primeSpeech();say(id==="male"?"Теперь подсказки мужским голосом":"Теперь подсказки женским голосом");}
   });});
   $("h-start").addEventListener("click",function(){unlock();showEquipment();});
+  // подсказка установки на iPhone/iPad: только в Safari, не в уже установленном приложении, пока её не скрыли
+  (function(){var ua=navigator.userAgent||"",ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1),
+    standalone=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+    $("ios-hint").hidden=!(ios&&!standalone&&!store.get("ss_ios_hint_off",false));
+    $("ios-hint-x").addEventListener("click",function(){store.set("ss_ios_hint_off",true);$("ios-hint").hidden=true;});})();
   $("eq-go").addEventListener("click",function(){closeSheet("sh-eq");startFrom(0);});
   $("eq-cancel").addEventListener("click",function(){closeSheet("sh-eq");});
   $("sh-eq").addEventListener("click",function(e){if(e.target===this)closeSheet("sh-eq");});

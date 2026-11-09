@@ -5,6 +5,8 @@
 var SET=Object.assign({beep:true,voice:true,music:true,vkind:"female"},store.get("ss_set",{}));   // vkind — голос подсказок: "female" | "male"
 var AC=null;
 function unlock(){
+  // iPhone: без этого сигналы и музыка молчат, если на телефоне включён бесшумный режим (Safari 17+, iOS 17+)
+  try{if(navigator.audioSession&&navigator.audioSession.type!=="playback")navigator.audioSession.type="playback";}catch(e){}
   try{
     if(!AC){var C=window.AudioContext||window.webkitAudioContext;if(C)AC=new C();}
     if(AC&&AC.state==="suspended")AC.resume();
