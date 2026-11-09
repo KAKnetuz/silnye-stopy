@@ -8,7 +8,9 @@
 <meta name="description" content="Ежедневный комплекс ЛФК для стоп с таймером и анимированными схемами">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Сильные стопы">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preload" href="fonts/GolosText.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="styles.css">
 <title>Сильные стопы</title>
@@ -40,6 +42,11 @@
   <div class="plans" role="tablist" aria-label="Вариант занятия">
     <button type="button" role="tab" class="plan" id="tab-short">30 минут<small></small></button>
     <button type="button" role="tab" class="plan" id="tab-full">Полный<small></small></button>
+  </div>
+
+  <div class="ios-hint" id="ios-hint" hidden>
+    <p><b>Установить на iPhone:</b> в Safari нажмите «Поделиться» <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11v9h12v-9"/></svg> → «На экран „Домой“». Приложение будет работать без интернета.</p>
+    <button class="ibtn" id="ios-hint-x" type="button" aria-label="Скрыть подсказку"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
 
   <div class="cta">

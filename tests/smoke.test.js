@@ -441,3 +441,34 @@ test("музыка: планировщик не перезапускается �
   assert.deepEqual(errors,[]);
   await ctx.close();
 });
+
+test("iPhone: подсказка установки в Safari, скрывается и не показывается в установленном приложении", async () => {
+  const UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+  const ctx = await browser.newContext({ userAgent: UA, viewport: { width: 390, height: 664 }, isMobile: true, hasTouch: true });
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok");
+  assert.ok(await page.isVisible("#ios-hint"), "на iPhone в Safari нет подсказки установки");
+  assert.ok((await page.textContent("#ios-hint")).includes("На экран"));
+  await page.click("#ios-hint-x");
+  assert.ok(await page.isHidden("#ios-hint"));
+  await page.reload(); await page.click("#splash");
+  assert.ok(await page.isHidden("#ios-hint"), "скрытая подсказка вернулась");
+  const html = await readFile(join(ROOT, "index.html"), "utf8");
+  assert.match(html, /rel="apple-touch-icon" href="apple-touch-icon.png"/);
+  assert.equal((await stat(join(ROOT, "apple-touch-icon.png"))).isFile(), true);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+  // в установленном приложении (standalone) подсказки нет
+  const ctx2 = await browser.newContext({ userAgent: UA, viewport: { width: 390, height: 664 } });
+  await ctx2.addInitScript(() => { Object.defineProperty(navigator, "standalone", { value: true }); });
+  const r2 = await openApp(ctx2);
+  await r2.page.click("#splash"); await r2.page.click("#ack-ok");
+  assert.ok(await r2.page.isHidden("#ios-hint"));
+  await ctx2.close();
+  // на Android подсказки нет
+  const ctx3 = await browser.newContext();
+  const r3 = await openApp(ctx3);
+  await r3.page.click("#splash"); await r3.page.click("#ack-ok");
+  assert.ok(await r3.page.isHidden("#ios-hint"));
+  await ctx3.close();
+});
