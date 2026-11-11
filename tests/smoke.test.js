@@ -228,28 +228,94 @@ test("аниме-геометрия: все 27 движений на ключе�
 });
 
 
-test("аниме-скетч: вторичные штрихи сохраняют повороты без дублирования transform", async () => {
+test("стиль «чистая линия»: единый контур под заливками, без карандашных штрихов", async () => {
   const ctx = await browser.newContext();
   const { page, errors } = await openApp(ctx);
-  const outcome = await page.evaluate(() => {
-    const raw = '<path d="M0 0L10 10" class="ft" transform="rotate(20 5 5)"/>';
-    const result = AN.sketchify(raw);
-    const root = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    root.innerHTML = result;
-    const paths = [...root.querySelectorAll("path")];
-    return {
-      count: paths.length,
-      duplicate: /<path[^>]*\btransform="[^"]*"[^>]*\btransform="/.test(result),
-      original: paths[0]?.getAttribute("transform"),
-      secondary: paths[1]?.getAttribute("transform"),
-      secondaryClass: paths[1]?.getAttribute("class")
-    };
+  const r = await page.evaluate(() => {
+    const out = [];
+    for (const k of ANIM_KEYS) {
+      const svg = AN.draw(k, 0.3);
+      if (/sk2d/.test(svg)) out.push(k + ": остались штрихи наброска");
+      if (AN.sketchify(svg) !== svg) out.push(k + ": постобработка меняет рисунок");
+    }
+    const root = document.createElementNS("http://www.w3.org/2000/svg", "svg"); root.innerHTML = AN.draw("heron", 0.3);
+    return { out, bo: root.querySelectorAll("path.bo").length, bf: root.querySelectorAll("path.bf").length };
   });
-  assert.equal(outcome.count, 2);
-  assert.equal(outcome.duplicate, false);
-  assert.equal(outcome.original, "rotate(20 5 5)");
-  assert.match(outcome.secondary, /^translate\([^)]+\) rotate\(20 5 5\)$/);
-  assert.match(outcome.secondaryClass, /\bsk2d\b/);
+  assert.deepEqual(r.out, []);
+  assert.ok(r.bo > 5 && r.bo === r.bf, "у каждой части силуэта должны быть контур и заливка");
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test("схема и таймер: до «Старт» — исходное положение, движение в работе, пауза замораживает кадр", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+  const frame = () => page.locator("#w-anim-svg").innerHTML();
+  await page.click(".exr >> nth=4");                 // «Медвежонок» — по таймеру
+  await page.waitForTimeout(200);
+  const idle = await frame(); await page.waitForTimeout(400);
+  assert.equal(await frame(), idle, "до «Старт» схема должна стоять в исходном положении");
+  await page.click("#w-main"); await page.waitForTimeout(1200);
+  assert.equal(await frame(), idle, "на подготовке схема ещё не движется");
+  await page.waitForTimeout(2400);                   // подготовка 3 с → работа
+  const w1 = await frame(); await page.waitForTimeout(300);
+  assert.notEqual(await frame(), w1, "в работе схема должна двигаться");
+  await page.click("#w-main");                       // пауза
+  const paused = await frame(); await page.waitForTimeout(500);
+  assert.equal(await frame(), paused, "на паузе схема должна замереть");
+  await page.click("#w-main"); await page.waitForTimeout(300);
+  assert.notEqual(await frame(), paused, "после «Продолжить» схема снова движется");
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test("схема и таймер: «держи» — поза удерживается, «расслабь» — возвращается в исходную", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+  const frame = () => page.locator("#w-anim-svg").innerHTML();
+  await page.click(".exr >> nth=15");                // «Короткая стопа»: держи 5 с, расслабь 3 с
+  await page.waitForTimeout(200);
+  const rest = await frame();
+  assert.match(rest, /свод расслаблен/);
+  await page.click("#w-main"); await page.waitForTimeout(3000 + 1600);
+  assert.match(await page.textContent("#w-sub"), /Держи/);
+  const hold = await frame(); await page.waitForTimeout(600);
+  assert.match(hold, /свод вверх/);
+  assert.equal(await frame(), hold, "во время «держи» поза не должна меняться");
+  await page.waitForTimeout(5000 - 2200 + 1800);
+  assert.match(await page.textContent("#w-sub"), /Расслабь/);
+  assert.equal(await frame(), rest, "на «расслабь» стопа возвращается в исходное положение");
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test("схема: при смене ноги рисунок зеркалится, подписи остаются читаемыми; части сцены идут по шагам", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#tab-full");
+  const frame = () => page.locator("#w-anim-svg").innerHTML();
+  await page.click(".exr >> nth=19");                // «Цапля»: левая, затем правая
+  await page.waitForTimeout(200);
+  const left = await frame(); await page.click("#w-skip"); await page.waitForTimeout(200); const right = await frame();
+  assert.match(left, /левая нога/); assert.match(right, /правая нога/);
+  assert.notEqual(/scale\(-1 1\)/.test(left), /scale\(-1 1\)/.test(right), "для другой ноги рисунок должен быть зеркальным");
+  const texts = await page.evaluate(() => [...document.querySelectorAll("#w-anim-svg text")].map(t => !t.closest("g[transform*='scale(-1']")));
+  assert.ok(texts.length >= 2 && texts.every(Boolean), "текст оказался в зеркальной группе");
+  await page.click("#w-close");
+  await page.click(".exr >> nth=0");                 // «Круги»: шаг 1 — внутрь, шаг 2 — наружу
+  await page.waitForTimeout(200); assert.match(await frame(), /круги внутрь/);
+  await page.click("#w-skip"); await page.waitForTimeout(200); assert.match(await frame(), /круги наружу/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test("схемы ходьбы: лупа со стопами; «Уборка»: врезка с сидящей фигурой", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const r = await page.evaluate(() => ["soldier", "penguin", "rollwalk", "cleanup"].map(k => { const s = AN.draw(k, 0.3); return [k, /clipPath/.test(s), /class="insr"/.test(s)]; }));
+  for (const [k, clip, ring] of r) assert.ok(clip && ring, k + ": нет врезки");
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -356,10 +422,10 @@ test("схемы: голова лёжа, подъём на носки, «Мед�
       for (const k of ["bike", "rags"]) {            // лицо к потолку, ничего не уходит под пол
         const R = draw(k, p), fl = bb(svg.querySelector("line.fl"), R).y0, iris = svg.querySelector(".iris");
         if (!iris || bb(iris, R).y1 > fl - 9) out.push(`${k} ${p}: лицо не смотрит вверх`);
-        svg.querySelectorAll("path.sk,path.skf").forEach(el => { if (!el.closest("[clip-path]") && bb(el, R).y1 > fl + 1) out.push(`${k} ${p}: контур ниже пола (${el.getAttribute("class")} ${bb(el, R).y1.toFixed(1)} > ${fl.toFixed(1)})`); });
+        svg.querySelectorAll("path.bf").forEach(el => { if (!el.closest("[clip-path]") && bb(el, R).y1 > fl + 1) out.push(`${k} ${p}: контур ниже пола (${el.getAttribute("class")} ${bb(el, R).y1.toFixed(1)} > ${fl.toFixed(1)})`); });
       }
       { const R = draw("raise", p), fl = 142;         // передний отдел стоп всегда на полу
-        const low = Math.max(...[...svg.querySelectorAll("path.sk")].map(el => bb(el, R)).filter(b => b.x0 > 95 && b.x1 < 140).map(b => b.y1));
+        const low = Math.max(...[...svg.querySelectorAll("path.bf")].map(el => bb(el, R)).filter(b => b.x0 > 95 && b.x1 < 140).map(b => b.y1));
         if (Math.abs(low - fl) > 1.2) out.push(`raise ${p}: стопы оторваны от пола (низ ${low.toFixed(1)}, пол ${fl})`); }
       { draw("bear", p); if (svg.querySelector("circle.acf")) out.push(`bear ${p}: лишняя оранжевая точка`); }
       { const R = draw("shortfoot", p), gap = svg.querySelector("path.gap");

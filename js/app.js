@@ -160,7 +160,7 @@ function render(){
   $("w-start").textContent=e.start;
   $("w-how").textContent=e.how;
   $("w-goal").textContent=e.goal;
-  if(S.animEx!==S.ex){S.animEx=S.ex;startAnim();}
+  if(S.animEx!==S.ex){S.animEx=S.ex;startAnim();}else drawAnim();
   var nx=EX[S.ex+1];$("w-next").textContent=nx?"Дальше: "+nx.name:"Это последнее упражнение";
 
   var c=$("w-chips");c.textContent="";
@@ -246,15 +246,41 @@ function pips(done,cur){
 }
 
 var REDUCED=false;try{REDUCED=window.matchMedia("(prefers-reduced-motion: reduce)").matches;}catch(e){}
-var animCur=null,animT0=0,animRAF=0,animLast=0;
-function drawAnim(){if(!animCur)return;var t=now(),p=REDUCED?0.3:((t-animT0)/1000/animCur.T)%1;
-  AN.setFocus(animCur.focus);AN.seed(REDUCED?7:Math.floor(t/140)*977+3); // линии наброска «дышат» ~7 раз в секунду
-  $("w-anim-svg").innerHTML=AN.sketchify(animCur.f(p));}
+var animCur=null,animKey="",animRAF=0,animLast=0,animSig="",animStateKey="",animT0=0;
+/* Схема идёт вместе с таймером: до «Старт», на подготовке и в отдыхе — исходное положение; движение — пока идёт работа;
+   на паузе кадр замирает; в упражнениях с задержкой поза держится ровно столько, сколько «держи», и отпускается на «расслабь». */
+function animStep(){ // шаг, который показывает схема (в отдыхе — следующий), и номер части сцены
+  var e=ex(),i=S.st;while(e.steps[i].k==="rest"&&i+1<e.steps.length)i++;
+  var st=e.steps[i],n=0;for(var j=0;j<i;j++){var q=e.steps[j];if(q.k!=="rest"&&q.side===st.side&&q.set===st.set)n++;}
+  return {st:st,part:n};
+}
+function animPose(){
+  var a=animCur,as=animStep(),st=as.st,parts=a.parts,rg=parts?parts[Math.min(as.part,parts.length-1)]:[0,1];
+  var h=st.k==="hold"?a.hold:null,rest=h?h.from:rg[0],p=rest,seg=S.segs[S.si],running=S.phase==="run"||S.phase==="paused";
+  var el=0;if(running&&seg){var rem=S.phase==="paused"?S.remain:S.segEnd-now();el=seg.ms-Math.max(0,rem);}
+  var key=S.ex+"."+S.st+"."+S.phase;if(key!==animStateKey){animStateKey=key;animT0=now();}
+  function loop(ms){return rg[0]+(rg[1]-rg[0])*((ms/1000/(a.T*(rg[1]-rg[0])))%1);}
+  if(REDUCED){var sp=running&&seg?seg.p:S.phase;   // без движения: исходная поза, а в работе — характерный кадр
+    p=sp==="hold"&&h?h.pk:(sp==="work"||sp==="manual"||(sp==="hold"&&!h))?rg[0]+(rg[1]-rg[0])*.3:rest;}
+  else if(S.phase==="manual")p=loop(now()-animT0);
+  else if(running&&seg){
+    if(seg.p==="work")p=loop(el);
+    else if(seg.p==="breath"&&a.breath)p=a.breath[0]+(a.breath[1]-a.breath[0])*((el/1000%10)/10);       // вдох на 4, выдох на 6 — как на таймере
+    else if(seg.p==="hold")p=h?h.from+(h.pk-h.from)*ease01(el/Math.min(900,seg.ms*.4)):loop(el);
+    else if(seg.p==="relax")p=h?h.pk+(h.to-h.pk)*ease01(el/Math.min(900,seg.ms*.5)):rest;
+  }
+  var side=st.side&&a.side?st.side:"";
+  return {p:p,part:as.part,mirror:!!side&&side!==a.side,label:side?(side==="L"?"левая нога":"правая нога"):""};
+}
+function ease01(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);}
+function drawAnim(){if(!animCur)return;var o=animPose(),sig=animKey+"|"+o.p.toFixed(4)+"|"+o.part+"|"+o.mirror;
+  if(sig===animSig)return;animSig=sig;
+  $("w-anim-svg").innerHTML=AN.draw(animKey,o.p,o);}
 var animVisible=true;
 function animLoop(ts){animRAF=0;if(S.view!=="work"||!animCur||document.hidden)return;if(animVisible&&ts-animLast>=50){animLast=ts;drawAnim();}animRAF=requestAnimationFrame(animLoop);} // 20 кадров в секунду, пауза вне экрана
-function startAnim(){animCur=AN[ex().anim]||null;var svg=$("w-anim-svg");svg.setAttribute("viewBox",AN.VIEWBOX);
+function startAnim(){animKey=ex().anim;animCur=AN[animKey]||null;animSig="";var svg=$("w-anim-svg");svg.setAttribute("viewBox",AN.VIEWBOX);
   svg.setAttribute("aria-label","Схема упражнения «"+ex().short+"». Исходное положение: "+ex().start+" Движение: "+ex().how); // подпись меняется только при смене упражнения
-  animT0=now();drawAnim();if(!REDUCED&&!animRAF)animRAF=requestAnimationFrame(animLoop);}
+  drawAnim();if(!animRAF)animRAF=requestAnimationFrame(animLoop);}
 function stopAnim(){if(animRAF)cancelAnimationFrame(animRAF);animRAF=0;}
 
 var toastT=null;
@@ -278,7 +304,7 @@ function applyTheme(t){
 }
 
 /* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
-var APP_VERSION="3.0",APP_DATE="11.11.2026";
+var APP_VERSION="3.1",APP_DATE="11.11.2026";
 var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
 function openSheet(id){$(id).hidden=false;}
 function closeSheet(id){$(id).hidden=true;}
@@ -519,7 +545,7 @@ function start(data){
   });
   setInterval(tick,100);
   try{new IntersectionObserver(function(es){animVisible=es[0].isIntersecting;}).observe(document.querySelector(".anim"));}catch(e){}
-  document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.view==="work"&&animCur&&!animRAF&&!REDUCED)animRAF=requestAnimationFrame(animLoop);});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&S.view==="work"&&animCur&&!animRAF)animRAF=requestAnimationFrame(animLoop);});
 
   renderHome();
   if(!(data&&data.view))showSplash();
