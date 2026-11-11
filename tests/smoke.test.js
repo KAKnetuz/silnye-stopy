@@ -557,3 +557,30 @@ test("дозировки одинаковые для левой и правой 
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test("настройки: уровень нагрузки «Лёгкий» уменьшает дозировки примерно до двух третей и сохраняется", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok");
+  const before = await page.evaluate(() => ({ n: EX.length, sec: planSec("full"), dose: EX.filter(e => e.short === "Ладошки")[0].dose }));
+  await page.click("#h-settings");
+  assert.equal(await page.getAttribute("#lv-normal", "aria-checked"), "true", "по умолчанию обычный уровень");
+  await page.click("#lv-easy");
+  assert.equal(await page.getAttribute("#lv-easy", "aria-checked"), "true");
+  const easy = await page.evaluate(() => ({ n: EX.length, sec: planSec("full"), level: JSON.parse(localStorage.getItem("ss_set")).level,
+    lad: EX.filter(e => e.short === "Ладошки")[0], bad: EX.filter(e => !e.dose || /undefined|NaN/.test(e.dose) || !e.steps.length || e.steps[e.steps.length - 1].k === "rest").map(e => e.short),
+    orig: BY["Ладошки"].steps.filter(s => s.k === "hold")[0].reps }));
+  assert.equal(easy.level, "easy", "выбор сохраняется");
+  assert.equal(easy.n, before.n, "состав упражнений не меняется");
+  assert.ok(easy.sec < before.sec * 0.8 && easy.sec > before.sec * 0.5, `время комплекса: ${easy.sec} против ${before.sec}`);
+  assert.equal(easy.lad.steps.filter(s => s.k === "hold")[0].reps, 10);
+  assert.equal(easy.orig, 15, "исходные дозировки не должны меняться");
+  assert.match(easy.lad.dose, /10 раз с задержкой 3 секунды, 2 подхода/);
+  assert.deepEqual(easy.bad, []);
+  await page.reload(); await page.click("#splash");
+  assert.match(await page.evaluate(() => EX.filter(e => e.short === "Ладошки")[0].dose), /^10 раз/, "после перезагрузки уровень остаётся лёгким");
+  await page.click("#h-settings"); await page.click("#lv-normal");
+  assert.equal(await page.evaluate(() => EX.filter(e => e.short === "Ладошки")[0].dose), before.dose);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

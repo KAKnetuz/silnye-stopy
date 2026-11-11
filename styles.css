@@ -90,6 +90,7 @@ h1,h2,h3{text-wrap:balance}
 
 .themes{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-basis:100%}
 .themes>span{font-weight:500}
+.set-note{margin:0;flex-basis:100%;color:var(--muted);font-size:14px;line-height:1.4}
 .seg{display:inline-grid;grid-template-columns:repeat(3,auto);gap:3px;padding:3px;border-radius:12px;background:var(--line)}
 .seg button{border:0;border-radius:9px;background:transparent;padding:0 14px;min-height:44px;font-weight:600;font-size:15px;color:var(--muted)}
 .seg2{grid-template-columns:repeat(2,auto)}

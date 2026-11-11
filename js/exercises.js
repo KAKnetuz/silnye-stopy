@@ -139,5 +139,41 @@ function flatten(blocks){
   blocks.forEach(function(b,bi){var grp=null;b.ex.forEach(function(e,j){if(e.group)grp=e.group;e.grp=grp;e.bi=bi;e.num=j+1;e.idx=out.length;out.push(e);});});
   return out;
 }
+/* ---------- Уровень нагрузки: «обычный» — дозировки комплекса как есть, «лёгкий» — примерно две трети ---------- */
+var LEVEL="normal";
+var WORDS=[["раз","раза","раз"],["круг","круга","кругов"],["хлопок","хлопка","хлопков"],["проход","прохода","проходов"],["рисунок","рисунка","рисунков"]];
+function pluralRu(n,f){var a=Math.abs(n)%100,b=a%10;if(a>10&&a<20)return f[2];if(b>1&&b<5)return f[1];if(b===1)return f[0];return f[2];}
+function easyNum(n){var k=Math.round(n*2/3);return Math.max(1,n>=20?Math.round(k/5)*5:k);}   // от 20 повторов — до круглого числа
+function easySec(s){return Math.max(10,Math.round(s*2/3/5)*5);}
+function easyText(t){ // «15 раз» → «10 раз», «5 проходов влево» → «3 прохода влево»
+  return t.replace(/^(\d+) (\S+)/,function(m,n,w){var k=easyNum(+n),f=WORDS.filter(function(x){return x.indexOf(w)>=0;})[0];return k+" "+(f?pluralRu(k,f):w);});
+}
+function easySteps(steps){
+  var max=steps.reduce(function(a,s){return Math.max(a,s.sets||1);},1),keep=max>=3?max-1:max,out=[];
+  steps.forEach(function(s){
+    if(s.set&&s.set>keep)return;
+    var q=Object.assign({},s);if(q.sets)q.sets=keep;
+    if(q.k==="time"||q.k==="breath")q.sec=easySec(q.sec);
+    else if(q.k==="reps")q.text=easyText(q.text);
+    else if(q.k==="hold")q.reps=easyNum(q.reps);
+    out.push(q);
+  });
+  while(out.length&&out[out.length-1].k==="rest")out.pop();
+  return out;
+}
+function secWords(s){var m=Math.floor(s/60),r=s%60,a=[];if(m)a.push(m+" "+pluralRu(m,["минута","минуты","минут"]));if(r)a.push(r+" "+pluralRu(r,["секунда","секунды","секунд"]));return a.join(" ");}
+function doseText(steps){ // дозировка словами — по шагам первого подхода
+  var real=steps.filter(function(s){return s.k!=="rest";}),sets=real[0].sets||1,first=real.filter(function(s){return !s.set||s.set===1;}),parts=[],seen={};
+  first.forEach(function(s){
+    var t=s.k==="time"?secWords(s.sec):s.k==="breath"?secWords(s.sec)+" отдыха":s.k==="hold"?s.reps+" "+pluralRu(s.reps,WORDS[0])+" с задержкой "+secWords(s.hold):s.text.charAt(0).toLowerCase()+s.text.slice(1);
+    if(s.k==="time"&&s.label&&first.length>1)t+=" ("+s.label.charAt(0).toLowerCase()+s.label.slice(1)+")";
+    if(s.side){if(seen[t])return;seen[t]=1;t+=" каждой ногой";}
+    parts.push(t);
+  });
+  var d=parts.join(" + ");if(sets>1)d+=", "+sets+" "+pluralRu(sets,["подход","подхода","подходов"]);
+  return d.charAt(0).toUpperCase()+d.slice(1);
+}
+function easyBlocks(blocks){return blocks.map(function(b){return Object.assign({},b,{ex:b.ex.map(function(e){var st=easySteps(e.steps);return Object.assign({},e,{steps:st,dose:doseText(st)});})});});}
 var PLAN="short";
-function usePlan(id){PLAN=PLANS[id]?id:"short";BLOCKS=PLANS[PLAN].blocks;EX=flatten(BLOCKS);}
+function planBlocks(id){var b=PLANS[PLANS[id]?id:"short"].blocks;return LEVEL==="easy"?easyBlocks(b):b;}
+function usePlan(id,level){if(level)LEVEL=level==="easy"?"easy":"normal";PLAN=PLANS[id]?id:"short";BLOCKS=planBlocks(PLAN);EX=flatten(BLOCKS);}
