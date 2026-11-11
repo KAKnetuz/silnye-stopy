@@ -304,7 +304,7 @@ function applyTheme(t){
 }
 
 /* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
-var APP_VERSION="3.1",APP_DATE="11.11.2026";
+var APP_VERSION="3.2",APP_DATE="11.11.2026";
 var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
 function openSheet(id){$(id).hidden=false;}
 function closeSheet(id){$(id).hidden=true;}
@@ -427,7 +427,7 @@ function renderHome(){
     rb.hidden=false;rb.textContent="Продолжить с упражнения "+(pr.ex+1)+" — "+EX[pr.ex].short;rb.dataset.ex=pr.ex;
   }else rb.hidden=true;
 }
-function planSec(id){return PLANS[id].blocks.reduce(function(a,b){return a+b.ex.reduce(function(x,e){return x+exSec(e);},0);},0);}
+function planSec(id){return planBlocks(id).reduce(function(a,b){return a+b.ex.reduce(function(x,e){return x+exSec(e);},0);},0);}
 function renderTabs(){
   ["short","full"].forEach(function(id){
     var t=$("tab-"+id),n=PLANS[id].blocks.reduce(function(x,b){return x+b.ex.length;},0);
@@ -483,7 +483,7 @@ function closeWork(){
 
 /* ---------- Wiring ---------- */
 function start(data){
-  usePlan(store.get("ss_plan","short"));
+  usePlan(store.get("ss_plan","short"),SET.level);
   buildBlocks();renderTabs();
   ["short","full"].forEach(function(id){$("tab-"+id).addEventListener("click",function(){if(PLAN!==id)setPlan(id);});
     $("tab-"+id).addEventListener("keydown",function(e){if(e.key==="ArrowLeft"||e.key==="ArrowRight"){var o=id==="short"?"full":"short";setPlan(o);$("tab-"+o).focus();e.preventDefault();}});});
@@ -498,6 +498,12 @@ function start(data){
   ["female","male"].forEach(function(id){$("vk-"+id).addEventListener("click",function(){
     SET.vkind=id;store.set("ss_set",SET);loadVoices();syncVoiceKind();
     if(SET.voice){primed=false;primeSpeech();say(id==="male"?"Теперь подсказки мужским голосом":"Теперь подсказки женским голосом");}
+  });});
+  function syncLevel(){["easy","normal"].forEach(function(id){$("lv-"+id).setAttribute("aria-checked",String((SET.level==="easy"?"easy":"normal")===id));});}
+  syncLevel();
+  ["easy","normal"].forEach(function(id){$("lv-"+id).addEventListener("click",function(){
+    if((SET.level==="easy"?"easy":"normal")===id)return;
+    SET.level=id;store.set("ss_set",SET);store.set("ss_progress",null);syncLevel();usePlan(PLAN,id);buildBlocks();renderTabs();renderHome();
   });});
   $("h-start").addEventListener("click",function(){unlock();showEquipment();});
   // подсказка установки на iPhone/iPad: только в Safari, не в уже установленном приложении, пока её не скрыли

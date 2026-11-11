@@ -2,7 +2,7 @@
 "use strict";
 
 /* ---------- Settings, sound, voice, screen ---------- */
-var SET=Object.assign({beep:true,voice:true,music:true,vkind:"female"},store.get("ss_set",{}));   // vkind — голос подсказок: "female" | "male"
+var SET=Object.assign({beep:true,voice:true,music:true,vkind:"female",level:"normal"},store.get("ss_set",{}));   // level — уровень нагрузки: "normal" | "easy";   // vkind — голос подсказок: "female" | "male"
 var AC=null;
 function unlock(){
   // iPhone: без этого сигналы и музыка молчат, если на телефоне включён бесшумный режим (Safari 17+, iOS 17+)

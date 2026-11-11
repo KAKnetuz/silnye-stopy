@@ -831,7 +831,10 @@ A.rags={T:14,parts:[[0,4/14],[4/14,1]],breath:[4/14,1],f:function(p){ // 4 с в
   var legs=[{th:180+j*4*Math.sin(w),kn:j*(6+5*Math.sin(w*1.3)),an:j*28*Math.sin(w+1)},{th:178-j*4*Math.sin(w+0.7),kn:j*(6+5*Math.sin(w*1.1+1)),an:j*28*Math.sin(w+2)}];
   var g=fig({hip:[124,101.6],tor:-90,far:[2,0],legs:legs,arms:[{sh:93,el:0},{sh:93,el:0}]});
   var s=cam.g(floor(111,60,180)+g.svg),ft=cam.p(g.legs[0].toe);
-  if(shake)s+=ln([ft[0]-18,ft[1]-2],[ft[0]-10,ft[1]-4],"ac")+ln([ft[0]-18,ft[1]+6],[ft[0]-10,ft[1]+6],"ac")+ln([ft[0]+10,ft[1]-4],[ft[0]+18,ft[1]-2],"ac")+ln([ft[0]+10,ft[1]+6],[ft[0]+18,ft[1]+6],"ac");
+  if(shake){ // штрихи встряхивания — вплотную к стопам, слева от носков и справа от пяток (по неподвижной средней позе, чтобы не дрожали)
+    var g0=fig({hip:[124,101.6],tor:-90,far:[2,0],legs:[{th:180,kn:0,an:0},{th:178,kn:0,an:0}],arms:[]}),t0=cam.p(g0.legs[0].toe),h0=cam.p(g0.legs[0].heel);
+    var xl=Math.min(t0[0],h0[0])-9,xr=Math.max(t0[0],h0[0])+9,ym=(t0[1]+h0[1])/2-2;
+    s+=ln([xl-8,ym-7],[xl,ym-4],"ac")+ln([xl-9,ym+3],[xl-1,ym+3],"ac")+ln([xr,ym-4],[xr+8,ym-7],"ac")+ln([xr+1,ym+3],[xr+9,ym+3],"ac");}
   var b=(p-SH)/(1-SH);
   if(!shake){var inh=b<0.4?sm(b/0.4):1-sm((b-0.4)/0.6),bc=cam.p([104,95]);s+=ci(bc,4+6*inh,"acd");}
   return s+note(shake?"трясём стопами":(b<0.4?"вдох на 4":"выдох на 6"),true);
