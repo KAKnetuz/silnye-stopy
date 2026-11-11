@@ -472,3 +472,22 @@ test("iPhone: подсказка установки в Safari, скрывает�
   assert.ok(await r3.page.isHidden("#ios-hint"));
   await ctx3.close();
 });
+
+test("дозировки одинаковые для левой и правой ноги (без акцента на одну сторону)", async () => {
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  const bad = await page.evaluate(() => {
+    const out = [];
+    for (const id of ["short", "full"]) PLANS[id].blocks.forEach(b => b.ex.forEach(e => {
+      if (/правой|левой/i.test(e.dose)) out.push(`${id}: «${e.short}» — в дозировке выделена одна нога: ${e.dose}`);
+      const sum = { L: 0, R: 0 }, cnt = { L: 0, R: 0 };
+      e.steps.forEach(s => { if (s.more) out.push(`${id}: «${e.short}» — шаг с пометкой more`);
+        if (s.side) { cnt[s.side]++; sum[s.side] += s.k === "time" ? s.sec : s.k === "hold" ? s.reps * (s.hold + s.relax) : parseInt(s.text, 10) || 1; } });
+      if (cnt.L !== cnt.R || sum.L !== sum.R) out.push(`${id}: «${e.short}» — нагрузка на ноги разная: Л ${sum.L} / П ${sum.R}`);
+    }));
+    return out;
+  });
+  assert.deepEqual(bad, []);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
