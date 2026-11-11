@@ -171,7 +171,6 @@ function render(){
     if(st.label)c.appendChild(chip(st.label));
     if(st.side)c.appendChild(chip(sideWord(st),"",st.side));
     if(st.sets>1)c.appendChild(chip((e.setWord||"Подход")+" "+st.set+" из "+st.sets));
-    if(st.more)c.appendChild(chip("Правой — больше","more"));
   }
 
   var m=$("w-main");m.classList.remove("is-pause","is-done");
@@ -279,7 +278,7 @@ function applyTheme(t){
 }
 
 /* ---------- Версия, предупреждение, инвентарь, настройки, копия, напоминание ---------- */
-var APP_VERSION="2.9",APP_DATE="08.11.2026";
+var APP_VERSION="3.0",APP_DATE="11.11.2026";
 var DISCLAIMER="Это дополнение к лечению, которое назначил ортопед, а не замена ему. Стельки, плавание и осмотры у врача остаются обязательными. Если во время занятия появилась боль в стопе, лодыжке, колене или спине — прекратите упражнение и обратитесь к лечащему врачу. Перед началом покажите комплекс ортопеду или инструктору ЛФК.";
 function openSheet(id){$(id).hidden=false;}
 function closeSheet(id){$(id).hidden=true;}
