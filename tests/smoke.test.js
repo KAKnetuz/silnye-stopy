@@ -584,3 +584,16 @@ test("настройки: уровень нагрузки «Лёгкий» ум�
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test("авторские права: правообладатель и контакт указаны в настройках и в LICENSE", async () => {
+  const lic = await readFile(join(ROOT, "LICENSE"), "utf8");
+  assert.match(lic, /Мазняк Екатерина Сергеевна/); assert.match(lic, /e\.s\.maznyak@gmail\.com/); assert.match(lic, /личных некоммерческих целях/);
+  const ctx = await browser.newContext();
+  const { page, errors } = await openApp(ctx);
+  await page.click("#splash"); await page.click("#ack-ok"); await page.click("#h-settings");
+  const t = await page.textContent("#s-copy");
+  assert.match(t, /© 2026 Мазняк Екатерина Сергеевна/); assert.match(t, /e\.s\.maznyak@gmail\.com/);
+  assert.ok(await page.isVisible("#s-copy"));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
